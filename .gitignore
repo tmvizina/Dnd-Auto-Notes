@@ -1,0 +1,25 @@
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+.dnd/
+
+# session inputs and derived media are large and private
+sessions/*/input/
+sessions/*/media/
+sessions/*/session.pdf
+*.wav
+*.flac
+*.mp3
+*.m4a
+*.aac
+*.ogg
+
+# databases
+*.db
+*.db-wal
+*.db-shm
+
+.DS_Store
+.idea/
