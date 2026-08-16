@@ -29,7 +29,7 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 
 | SHA | Ticket | Scope | Validated |
 | --- | --- | --- | --- |
-| — | — | Planning docs and backlog | Not committed yet |
+| `cd93fd0` | — | Planning docs, 52-ticket backlog, agent definitions | Root commit, 66 files. All 52 ticket-index links resolve; every ticket has complete frontmatter; no `depends_on` references a non-existent id. |
 
 ## Known risks
 
@@ -41,10 +41,12 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 
 ## Exact next actions
 
-1. Confirm the repository root (see "Repository location" below) and make the initial commit of the planning documents.
+1. Read `docs/claude-orchestration.md` (Claude Code) or `docs/prompts/codex-orchestrator.md` (Codex) before the first session — the context-discipline rules are what keep the run affordable.
 2. Run `P0-01` (repo scaffold) — it has no dependencies and everything else waits on it.
 3. Run `P0-06` (contracts and stage runner) next; it unblocks all three parallel tracks in phase 1.
 4. Then fan out: track A `P1-01`/`P1-02`/`P1-03`, track B `P1-04`/`P1-05`/`P1-07`, track C `P1-08`.
+
+Open question for the human, not blocking: whether to flatten the nested repository path (below).
 
 ## Repository location
 
