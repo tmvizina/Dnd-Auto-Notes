@@ -7,8 +7,24 @@ assignee: "luna-p4-08"
 depends_on: [P4-06, P2-08]
 scope:
   - app/ui/src/pages/Review.tsx
+  - app/ui/src/pages/Review.test.tsx
   - app/ui/src/components/ClipPlayer.tsx
+  - app/ui/src/components/ClipPlayer.test.tsx
+  - app/ui/src/App.tsx
+  - app/ui/src/pages.tsx
+  - app/ui/src/transport.ts
+  - app/ui/src/transport.test.ts
+  - app/ui/src/styles.css
   - app/desktop/src/main/handlers/review.ts
+  - app/desktop/src/main/handlers/review.test.ts
+  - app/desktop/src/shared/contracts.ts
+  - app/desktop/src/shared/contracts.test.ts
+  - app/desktop/src/preload/index.ts
+  - app/desktop/src/preload/index.test.ts
+  - app/desktop/src/main/ipc.ts
+  - app/desktop/src/main/ipc.test.ts
+  - app/desktop/src/main/main.ts
+  - app/desktop/src/main/main.test.ts
 estimate: L
 commit: ""
 ---
