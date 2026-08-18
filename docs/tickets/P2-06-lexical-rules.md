@@ -2,8 +2,8 @@
 id: P2-06
 phase: 2
 title: Lexical rule engine
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p2-06"
 depends_on: [P2-03, P1-07]
 scope:
   - packages/core/src/persona/lexical.ts
