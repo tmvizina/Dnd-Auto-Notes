@@ -8,6 +8,7 @@ depends_on: [P2-07]
 scope:
   - packages/core/src/llm/**
   - packages/core/src/persona/adjudicate.ts
+  - packages/core/src/persona/adjudicate.test.ts
 estimate: L
 commit: ""
 ---
