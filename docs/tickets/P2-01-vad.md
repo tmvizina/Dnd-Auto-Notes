@@ -7,6 +7,7 @@ assignee: "luna-p2-01"
 depends_on: [P1-01, P1-09]
 scope:
   - sidecar/dnd_sidecar/vad.py
+  - sidecar/dnd_sidecar/server.py
   - sidecar/tests/test_vad.py
 estimate: M
 commit: ""
