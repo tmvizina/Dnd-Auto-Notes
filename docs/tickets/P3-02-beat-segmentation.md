@@ -8,6 +8,7 @@ depends_on: [P3-01]
 scope:
   - packages/core/src/outline/beats.ts
   - packages/core/src/outline/beats.test.ts
+  - packages/core/src/contracts/events.ts
 estimate: L
 commit: ""
 ---
