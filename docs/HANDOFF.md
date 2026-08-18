@@ -6,11 +6,11 @@ The living state of the build. The orchestrator appends to this after every inte
 
 **Phase 0 is complete** and **phase 1 is over half done.** `P0-01`, `P0-02`, `P0-04`, `P0-05` and `P0-06` are done; `P0-03` (CI) is written and locally verified but **blocked** — its acceptance is a green CI run, which needs a push.
 
-In phase 1, `P1-01`, `P1-02`, `P1-03`, `P1-04`, `P1-07` and `P1-08` are done. The Roll20 capture parser (`P1-05`) and timestamp recovery (`P1-06`) remain, and `P1-09` (intake stage + CLI) waits on them.
+In phase 1, `P1-01`, `P1-02`, `P1-03`, `P1-04`, `P1-05`, `P1-07` and `P1-08` are done. Roll20 timestamp recovery (`P1-06`) remains, and `P1-09` (intake stage + CLI) waits on it.
 
 In phase 4, `P4-01` is done: the Electron workspace, locked-down main/preload boundary, packaged custom protocol, static renderer, and dmg/nsis packaging configuration are in place. `P4-02` is now ready.
 
-The repo builds, typechecks, tests and lints clean: 289 TypeScript tests, 40 Python tests, `npm run tickets -- --check` green across all 52 tickets.
+The committed repo builds, typechecks, tests and lints clean: 297 TypeScript tests and 40 Python tests after P1-05; `npm run tickets -- --check` is green across all 52 tickets.
 
 In place:
 
@@ -57,6 +57,8 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 
 | `f4dfd33` | `P1-04` | Roll20 live and post-hoc browser capture | Syntax, lint, format, full typecheck, 289 TS tests and 40 Python tests passed. Focused VM checks covered live mutation capture, reload restore, late/recreated turn order, cloned anonymous messages, JSON download and native d100 markup. No code blocker remains; validation in an actual Roll20 tab is still pending. |
 
+| `25f969a` | `P1-05` | Pure Roll20 JSON/HTML capture parser | 8 parser/generator-backed tests passed, including semantic JSON/HTML equivalence, advantage, dropped dice, combat markers, unknown templates, sequence ordering and NPC-label rejection. Full validation over the combined disjoint worktree passed 318 TS tests and 40 Python tests plus typecheck/lint/format. No code blocker remains; real Roll20 markup is still unverified. |
+
 ## Known risks
 
 1. **Roll20 DOM is not an API.** `P1-04` retains raw `outerHTML` per message so a markup change only breaks parsing, not the recording, and its DOM behavior is covered by synthetic VM checks. Validation in an actual Roll20 tab is still pending; `P1-05` depends on the retained markup.
@@ -69,9 +71,8 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 
 Track A (audio) and track C (persistence) are finished. What remains in phase 1 is the Roll20 chain and the two tickets that consume everything:
 
-1. **`P1-05` capture parser** — ready now and on the critical path.
-2. **`P1-06` timestamp recovery** follows it.
-3. **`P1-09`** (intake stage + CLI) needs the Roll20 half; **`P1-10`** (QA report) follows it.
+1. **`P1-06` timestamp recovery** — ready now and the last Roll20 prerequisite.
+2. **`P1-09`** (intake stage + CLI) follows it; **`P1-10`** (QA report) follows intake.
 
 `P4-02` (IPC contracts and validation) is also ready and can proceed in parallel.
 

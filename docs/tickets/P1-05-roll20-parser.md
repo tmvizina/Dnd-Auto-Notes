@@ -2,7 +2,7 @@
 id: P1-05
 phase: 1
 title: Roll20 capture parser
-status: approved
+status: done
 assignee: "orchestrator"
 depends_on: [P1-04, P0-06]
 scope:
@@ -10,7 +10,7 @@ scope:
   - packages/core/src/index.ts
   - tools/fixture-roll20.mjs
 estimate: L
-commit: ""
+commit: "25f969a"
 ---
 
 ## Why
