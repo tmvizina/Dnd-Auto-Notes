@@ -2,7 +2,7 @@
 id: P2-04
 phase: 2
 title: Utterance embeddings and prosody features
-status: in_progress
+status: done
 assignee: "luna-p2-04"
 depends_on: [P2-03]
 scope:
@@ -14,7 +14,7 @@ scope:
   - packages/core/src/contracts/features.ts
   - packages/core/src/session/io.ts
 estimate: M
-commit: ""
+commit: "12d7b10"
 ---
 
 ## Why
@@ -33,9 +33,9 @@ Text alone cannot tell you that a player just dropped into their character's voi
 
 ## Acceptance
 
-- [ ] Every utterance above the duration floor has an embedding and a full prosody vector.
-- [ ] Embeddings are L2-normalised and deterministic for identical audio.
-- [ ] Z-scoring is per player, not global.
-- [ ] The binary store round-trips exactly and is under 30 MB for a four-hour session.
-- [ ] Fake mode yields clusters that separate cleanly, so downstream tests are meaningful.
-- [ ] Feature extraction for a four-hour session completes within the `P5-02` budget.
+- [x] Every utterance above the duration floor has an embedding and a full prosody vector.
+- [x] Embeddings are L2-normalised and deterministic for identical audio.
+- [x] Z-scoring is per player, not global.
+- [x] The binary store round-trips exactly and is under 30 MB for a four-hour session.
+- [x] Fake mode yields clusters that separate cleanly, so downstream tests are meaningful.
+- [x] Feature extraction for a four-hour session completes within the `P5-02` budget.
