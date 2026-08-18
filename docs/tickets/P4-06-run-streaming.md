@@ -8,6 +8,18 @@ depends_on: [P4-05]
 scope:
   - app/desktop/src/main/runs/**
   - app/ui/src/components/RunPanel.tsx
+  - app/ui/src/components/runPanel.test.tsx
+  - app/desktop/src/shared/contracts.ts
+  - app/desktop/src/shared/contracts.test.ts
+  - app/desktop/src/main/ipc.ts
+  - app/desktop/src/main/ipc.test.ts
+  - app/desktop/src/preload/index.ts
+  - app/desktop/src/preload/index.test.ts
+  - app/desktop/src/main/main.ts
+  - app/desktop/src/main/main.test.ts
+  - app/ui/src/transport.ts
+  - app/ui/src/transport.test.ts
+  - app/ui/src/App.tsx
 estimate: L
 commit: ""
 ---
