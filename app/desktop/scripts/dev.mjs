@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const desktopRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const repositoryRoot = resolve(desktopRoot, "..", "..");
-const rendererRoot = join(desktopRoot, "renderer");
+const rendererRoot = join(repositoryRoot, "app", "ui");
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 const viteCli = join(repositoryRoot, "node_modules", "vite", "bin", "vite.js");
 const electronCli = join(repositoryRoot, "node_modules", "electron", "cli.js");

@@ -8,9 +8,10 @@
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "build:core": "npm run build --workspace @dnd/core",
+    "build:ui": "vite build --config ../ui/vite.config.ts",
     "build:main": "tsc -p tsconfig.main.json",
     "build:preload": "esbuild ./src/preload/index.ts --bundle --platform=node --format=cjs --target=node22 --external:electron --outfile=dist/preload/index.cjs",
-    "build": "npm run typecheck && npm run build:core && npm run build:main && npm run build:preload",
+    "build": "npm run typecheck && npm run build:core && npm run build:ui && npm run build:main && npm run build:preload",
     "dev": "node ./scripts/dev.mjs",
     "start": "npm run build && electron .",
     "rebuild:electron": "electron-rebuild --force --which-module better-sqlite3 --version 36.9.5 --module-dir ../..",
@@ -18,11 +19,15 @@
     "package:dir": "npm run build && npm run rebuild:electron && electron-builder --projectDir ../.. --config electron-builder.yml --dir"
   },
   "dependencies": {
-    "@dnd/core": "*"
+    "@dnd/core": "*",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.2.0",
     "@types/node": "^22.10.5",
+    "@types/react": "18.3.18",
+    "@types/react-dom": "18.3.5",
     "electron": "36.9.5",
     "electron-builder": "^26.15.3",
     "esbuild": "^0.25.0",

@@ -26,11 +26,10 @@ files:
 asarUnpack:
   - node_modules/better-sqlite3/build/Release/*.node
 
-# The shell's initial page is deliberately tiny and static. The renderer
-# workspace can replace this resource with its built output without changing
-# the privileged protocol or preload boundary.
+# Keep renderer assets outside the asar so the privileged protocol can serve
+# the Vite output with stable relative URLs in the packaged shell.
 extraResources:
-  - from: app/desktop/renderer
+  - from: app/ui/dist
     to: ui
     filter:
       - "**/*"
