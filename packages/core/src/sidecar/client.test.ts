@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { SidecarClient } from "./client.js";
 import type { JobRecord } from "./client.js";
-import { SidecarError } from "./errors.js";
+import type { SidecarError } from "./errors.js";
 
 function job(overrides: Partial<JobRecord> = {}): JobRecord {
   return {
