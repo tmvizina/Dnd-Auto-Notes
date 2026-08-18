@@ -3,7 +3,7 @@
 Single-page status snapshot for the full backlog. Ticket frontmatter remains authoritative; update this file whenever a ticket changes status or records its implementation commit.
 
 **Last updated:** 2026-08-18
-**Overall:** 19 done, 3 in progress, 1 blocked, 29 todo - 52 total (36.5% done)
+**Overall:** 20 done, 2 in progress, 1 blocked, 29 todo - 52 total (38.5% done)
 
 ## Phase 0 — Foundations
 
@@ -18,35 +18,35 @@ Single-page status snapshot for the full backlog. Ticket frontmatter remains aut
 
 ## Phase 1 — Acquisition and persistence
 
-| Ticket                                          | Status      | Assignee     | Commit    | Title                                    |
-| ----------------------------------------------- | ----------- | ------------ | --------- | ---------------------------------------- |
-| [P1-01](tickets/P1-01-sidecar-skeleton.md)      | done        | orchestrator | `42d7e12` | Python sidecar skeleton and job registry |
-| [P1-02](tickets/P1-02-sidecar-lifecycle.md)     | done        | orchestrator | `630bf36` | Sidecar lifecycle from Node              |
-| [P1-03](tickets/P1-03-craig-intake.md)          | done        | orchestrator | `58bc17b` | Craig recording intake                   |
-| [P1-04](tickets/P1-04-roll20-capture-script.md) | done        | luna-p1-04b  | `f4dfd33` | Roll20 browser capture script            |
-| [P1-05](tickets/P1-05-roll20-parser.md)         | done        | orchestrator | `25f969a` | Roll20 capture parser                    |
-| [P1-06](tickets/P1-06-roll20-timestamps.md)     | done        | luna-p1-06   | `5dd325b` | Roll20 timestamp recovery                |
-| [P1-07](tickets/P1-07-campaign-registry.md)     | done        | orchestrator | `0223f88` | Campaign registry and identity mapping   |
-| [P1-08](tickets/P1-08-sqlite-ledger.md)         | done        | orchestrator | `da278f1` | SQLite schema and run ledger             |
-| [P1-09](tickets/P1-09-intake-stage-cli.md)      | done        | luna-p1-09   | `ee50c13` | Intake stage and the pipeline CLI        |
-| [P1-10](tickets/P1-10-intake-qa.md)             | in_progress | luna-p1-10   | -         | Intake QA report                         |
+| Ticket                                          | Status | Assignee     | Commit    | Title                                    |
+| ----------------------------------------------- | ------ | ------------ | --------- | ---------------------------------------- |
+| [P1-01](tickets/P1-01-sidecar-skeleton.md)      | done   | orchestrator | `42d7e12` | Python sidecar skeleton and job registry |
+| [P1-02](tickets/P1-02-sidecar-lifecycle.md)     | done   | orchestrator | `630bf36` | Sidecar lifecycle from Node              |
+| [P1-03](tickets/P1-03-craig-intake.md)          | done   | orchestrator | `58bc17b` | Craig recording intake                   |
+| [P1-04](tickets/P1-04-roll20-capture-script.md) | done   | luna-p1-04b  | `f4dfd33` | Roll20 browser capture script            |
+| [P1-05](tickets/P1-05-roll20-parser.md)         | done   | orchestrator | `25f969a` | Roll20 capture parser                    |
+| [P1-06](tickets/P1-06-roll20-timestamps.md)     | done   | luna-p1-06   | `5dd325b` | Roll20 timestamp recovery                |
+| [P1-07](tickets/P1-07-campaign-registry.md)     | done   | orchestrator | `0223f88` | Campaign registry and identity mapping   |
+| [P1-08](tickets/P1-08-sqlite-ledger.md)         | done   | orchestrator | `da278f1` | SQLite schema and run ledger             |
+| [P1-09](tickets/P1-09-intake-stage-cli.md)      | done   | luna-p1-09   | `ee50c13` | Intake stage and the pipeline CLI        |
+| [P1-10](tickets/P1-10-intake-qa.md)             | done   | luna-p1-10   | `43dea94` | Intake QA report                         |
 
 ## Phase 2 — Transcript and persona
 
-| Ticket                                         | Status      | Assignee   | Commit | Title                                           |
-| ---------------------------------------------- | ----------- | ---------- | ------ | ----------------------------------------------- |
-| [P2-01](tickets/P2-01-vad.md)                  | done        | luna-p2-01 | `edd2445` | VAD segmentation                             |
-| [P2-02](tickets/P2-02-asr.md)                  | in_progress | luna-p2-02 | -      | ASR with word timestamps                        |
-| [P2-03](tickets/P2-03-timeline-merge.md)       | todo        | —          | —      | Cross-track timeline merge                      |
-| [P2-04](tickets/P2-04-utterance-features.md)   | todo        | —          | —      | Utterance embeddings and prosody features       |
-| [P2-05](tickets/P2-05-voice-profiles.md)       | todo        | —          | —      | Voice-mode clustering and campaign profile bank |
-| [P2-06](tickets/P2-06-lexical-rules.md)        | todo        | —          | —      | Lexical rule engine                             |
-| [P2-07](tickets/P2-07-persona-scorer.md)       | todo        | —          | —      | Persona scorer and flagging                     |
-| [P2-08](tickets/P2-08-dm-npc.md)               | todo        | —          | —      | DM-to-NPC assignment                            |
-| [P2-09](tickets/P2-09-roll-speech-align.md)    | todo        | —          | —      | Roll-to-speech time anchoring                   |
-| [P2-10](tickets/P2-10-adjudicator.md)          | todo        | —          | —      | Adjudicator interface and providers             |
-| [P2-11](tickets/P2-11-audio-adjudicator.md)    | todo        | —          | —      | Audio-native adjudicator                        |
-| [P2-12](tickets/P2-12-labeling-calibration.md) | todo        | —          | —      | Labeling CLI and calibration                    |
+| Ticket                                         | Status      | Assignee   | Commit    | Title                                           |
+| ---------------------------------------------- | ----------- | ---------- | --------- | ----------------------------------------------- |
+| [P2-01](tickets/P2-01-vad.md)                  | done        | luna-p2-01 | `edd2445` | VAD segmentation                                |
+| [P2-02](tickets/P2-02-asr.md)                  | in_progress | luna-p2-02 | -         | ASR with word timestamps                        |
+| [P2-03](tickets/P2-03-timeline-merge.md)       | todo        | —          | —         | Cross-track timeline merge                      |
+| [P2-04](tickets/P2-04-utterance-features.md)   | todo        | —          | —         | Utterance embeddings and prosody features       |
+| [P2-05](tickets/P2-05-voice-profiles.md)       | todo        | —          | —         | Voice-mode clustering and campaign profile bank |
+| [P2-06](tickets/P2-06-lexical-rules.md)        | todo        | —          | —         | Lexical rule engine                             |
+| [P2-07](tickets/P2-07-persona-scorer.md)       | todo        | —          | —         | Persona scorer and flagging                     |
+| [P2-08](tickets/P2-08-dm-npc.md)               | todo        | —          | —         | DM-to-NPC assignment                            |
+| [P2-09](tickets/P2-09-roll-speech-align.md)    | todo        | —          | —         | Roll-to-speech time anchoring                   |
+| [P2-10](tickets/P2-10-adjudicator.md)          | todo        | —          | —         | Adjudicator interface and providers             |
+| [P2-11](tickets/P2-11-audio-adjudicator.md)    | todo        | —          | —         | Audio-native adjudicator                        |
+| [P2-12](tickets/P2-12-labeling-calibration.md) | todo        | —          | —         | Labeling CLI and calibration                    |
 
 ## Phase 3 — Outline and notes
 

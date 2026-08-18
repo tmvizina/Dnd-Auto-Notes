@@ -2,7 +2,7 @@
 id: P1-10
 phase: 1
 title: Intake QA report
-status: in_progress
+status: done
 assignee: "luna-p1-10"
 depends_on: [P1-09]
 scope:
@@ -15,7 +15,7 @@ scope:
   - packages/cli/src/config.test.ts
   - packages/cli/src/pipeline.test.ts
 estimate: S
-commit: ""
+commit: "43dea94"
 ---
 
 ## Why
@@ -40,8 +40,8 @@ Every failure mode in this project is silent. A wrong track binding, a missing p
 
 ## Acceptance
 
-- [ ] Each code above fires on a purpose-built fixture and on none of the clean ones.
-- [ ] Every entry has an actionable hint naming a file and a field.
-- [ ] The clean synthetic fixture produces zero errors.
-- [ ] `--with-defects` produces exactly its three defects and no false positives.
-- [ ] Codes are stable and documented in one place.
+- [x] Each code above fires on a purpose-built fixture and on none of the clean ones.
+- [x] Every entry has an actionable hint naming a file and a field.
+- [x] The clean synthetic fixture produces zero errors.
+- [x] `--with-defects` produces exactly its three defects and no false positives.
+- [x] Codes are stable and documented in one place.
