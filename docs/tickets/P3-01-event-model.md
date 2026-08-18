@@ -7,7 +7,11 @@ assignee: "luna-p3-01"
 depends_on: [P2-07, P2-09]
 scope:
   - packages/core/src/outline/events.ts
+  - packages/core/src/outline/events.test.ts
   - packages/core/src/stages/outline.ts
+  - packages/core/src/stages/outline.test.ts
+  - packages/core/src/contracts/events.ts
+  - packages/core/src/index.ts
 estimate: M
 commit: ""
 ---
