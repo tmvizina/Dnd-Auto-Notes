@@ -2,7 +2,7 @@
 id: P4-01
 phase: 4
 title: Electron scaffold
-status: approved
+status: done
 assignee: "orchestrator"
 depends_on: [P0-06]
 scope:
@@ -11,7 +11,7 @@ scope:
   - package.json
   - package-lock.json
 estimate: M
-commit: ""
+commit: "e46664b"
 ---
 
 ## Why

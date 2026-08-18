@@ -8,7 +8,9 @@ The living state of the build. The orchestrator appends to this after every inte
 
 In phase 1, `P1-01`, `P1-02`, `P1-03`, `P1-07` and `P1-08` are done. The whole Roll20 track (`P1-04` → `P1-05` → `P1-06`) is untouched, and `P1-09` (intake stage + CLI) waits on it.
 
-The repo builds, typechecks, tests and lints clean: 284 TypeScript tests, 40 Python tests, `npm run tickets -- --check` green across all 52 tickets.
+In phase 4, `P4-01` is done: the Electron workspace, locked-down main/preload boundary, packaged custom protocol, static renderer, and dmg/nsis packaging configuration are in place. `P4-02` is now ready.
+
+The repo builds, typechecks, tests and lints clean: 289 TypeScript tests, 40 Python tests, `npm run tickets -- --check` green across all 52 tickets.
 
 In place:
 
@@ -51,6 +53,8 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 | `630bf36` | `P1-02` | Sidecar lifecycle from Node                         | As above. Its ticket was left open until `0ac84f7`, which is what held `P1-03` out of `--ready`.                                                                                                               |
 | `58bc17b` | `P1-03` | Craig intake, and `/probe` extended to ffprobe      | 101 new TS tests, 14 new Python tests. Durations, speech ratios and hashes measured off real fixture WAV bytes with no ffmpeg and no sidecar process. Archive path proven end to end through a hand-built zip. |
 
+| `e46664b` | `P4-01` | Secure Electron desktop scaffold | 5 targeted security/path tests, 289 TS tests and 40 Python tests passed; full typecheck, lint and format passed. An unpacked Windows package was built through electron-builder with the explicit native rebuild. No code blocker remains; an interactive visible-window smoke was not run during orchestration. |
+
 ## Known risks
 
 1. **Roll20 DOM is not an API.** The capture script retains raw `outerHTML` per message so a markup change only breaks the parser, not the recording. `P1-04` and `P1-05` depend on this.
@@ -67,7 +71,7 @@ Track A (audio) and track C (persistence) are finished. What remains in phase 1 
 2. **`P1-05` capture parser**, then **`P1-06` timestamp recovery**.
 3. **`P1-09`** (intake stage + CLI) needs the Roll20 half; **`P1-10`** (QA report) follows it.
 
-`P4-01` (Electron scaffold) is also ready and collides with nothing, if a second worker is available.
+`P4-02` (IPC contracts and validation) is now ready and can proceed in parallel after the active `P1-04` ticket is integrated.
 
 Run `npm run tickets -- --ready` rather than trusting this list.
 
