@@ -10,6 +10,7 @@ scope:
   - packages/core/src/persona/scorer.config.json
   - packages/core/src/stages/persona.ts
   - packages/core/src/persona/scorer.test.ts
+  - packages/core/src/contracts/attribution.ts
 estimate: L
 commit: ""
 ---
