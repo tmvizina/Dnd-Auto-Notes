@@ -14,6 +14,7 @@ scope:
   - packages/cli/src/usage.ts
   - packages/core/src/persona/calibrate.ts
   - packages/core/src/persona/calibrate.test.ts
+  - packages/core/src/persona/profileBank.ts
   - packages/core/src/index.ts
   - docs/calibration.md
 estimate: M
