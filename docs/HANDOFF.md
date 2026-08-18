@@ -4,9 +4,9 @@ The living state of the build. The orchestrator appends to this after every inte
 
 ## Current state
 
-Phase 0 is three tickets in. `P0-01`, `P0-02` and `P0-04` are done; `P0-03`, `P0-05` and `P0-06` remain.
+**Phase 0 is complete.** `P0-01`, `P0-02`, `P0-04`, `P0-05` and `P0-06` are done; `P0-03` (CI) is written and locally verified but **blocked** — its acceptance is a green CI run, which needs a push.
 
-The repo builds, typechecks, tests and lints clean: 40 TypeScript tests, 10 Python tests (1 skipped until `P1-01`), `npm run tickets -- --check` green across all 52 tickets.
+The repo builds, typechecks, tests and lints clean: 102 TypeScript tests, 10 Python tests (1 skipped until `P1-01`), `npm run tickets -- --check` green across all 52 tickets.
 
 In place:
 
@@ -41,6 +41,10 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 | `2dfc72b` | —       | Prettier over the P0-01 scaffold sources            | Formatting only.                                                                                               |
 | `c5dba79` | `P0-04` | `tools/tickets.mjs`, root tsconfig for `test/`      | 21 tests. `--check` green on all 52 tickets; `--ready` lists exactly the unblocked set.                        |
 
+| `ab2cf9f` | `P0-03` | CI workflow | Ran the macOS job's exact sequence locally, `npm ci` included. Green run itself still unverified — needs a push. |
+| `5104070` | `P0-06` | Contracts, session layer, stage runner | 53 tests. Skip/re-run/force/error paths and write atomicity all proven by injected failures, not asserted. |
+| `5229b93` | `P0-05` | Synthetic fixture generator | 12 tests. Byte-identical across runs; exactly 3 defects under `--with-defects`; WAV headers checked byte-wise. |
+
 ## Known risks
 
 1. **Roll20 DOM is not an API.** The capture script retains raw `outerHTML` per message so a markup change only breaks the parser, not the recording. `P1-04` and `P1-05` depend on this.
@@ -51,12 +55,19 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 
 ## Exact next actions
 
-1. `P0-06` (contracts and stage runner, size L) — the critical path. It unblocks `P0-05` and all three parallel tracks in phase 1.
-2. `P0-05` (synthetic fixtures) once `P0-06` fixes the artifact shapes.
-3. `P0-03` (CI) any time — it depends only on `P0-02`, and is worth landing before the backlog gets wide.
-4. Phase 1 then fans out: track A `P1-01`/`P1-02`/`P1-03`, track B `P1-04`/`P1-05`/`P1-07`, track C `P1-08`.
+Phase 1, three tracks that do not collide:
+
+1. **Track A (audio):** `P1-01` sidecar skeleton → `P1-02` lifecycle → `P1-03` Craig intake.
+2. **Track B (Roll20 + registry):** `P1-04` capture script → `P1-05` parser → `P1-06` timestamps; `P1-07` campaign registry is independent.
+3. **Track C (persistence):** `P1-08` SQLite ledger.
+
+`P1-09` (intake stage + CLI) needs A, B and C; `P1-10` (QA report) follows it.
 
 Run `npm run tickets -- --ready` rather than trusting this list.
+
+### Decision waiting on you
+
+`P0-03` is blocked on a push. Nothing else depends on it, so phase 1 proceeds regardless.
 
 ## Environment notes
 

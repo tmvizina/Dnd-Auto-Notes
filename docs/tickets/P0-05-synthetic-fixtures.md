@@ -2,14 +2,14 @@
 id: P0-05
 phase: 0
 title: Synthetic session fixture generator
-status: approved
+status: done
 assignee: "orchestrator"
 depends_on: [P0-06]
 scope:
   - tools/generate-fixture.mjs
   - test/fixtures/**
 estimate: M
-commit: ""
+commit: "5229b93"
 ---
 
 ## Why
