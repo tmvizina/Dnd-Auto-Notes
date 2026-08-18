@@ -8,6 +8,7 @@ depends_on: [P3-02]
 scope:
   - packages/core/src/outline/encounter.ts
   - packages/core/src/outline/encounter.test.ts
+  - packages/core/src/contracts/events.ts
 estimate: L
 commit: ""
 ---
