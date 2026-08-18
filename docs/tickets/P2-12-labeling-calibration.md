@@ -7,7 +7,13 @@ assignee: "luna-p2-12"
 depends_on: [P2-08]
 scope:
   - packages/cli/src/commands/label.ts
+  - packages/cli/src/commands/label.test.ts
+  - packages/cli/src/cli.ts
+  - packages/cli/src/cli.test.ts
+  - packages/cli/src/bin.ts
+  - packages/cli/src/usage.ts
   - packages/core/src/persona/calibrate.ts
+  - packages/core/src/persona/calibrate.test.ts
   - docs/calibration.md
 estimate: M
 commit: ""
