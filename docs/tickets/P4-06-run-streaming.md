@@ -17,9 +17,15 @@ scope:
   - app/desktop/src/preload/index.test.ts
   - app/desktop/src/main/main.ts
   - app/desktop/src/main/main.test.ts
+  - app/desktop/src/main/handlers/sessions.ts
+  - app/desktop/src/main/handlers/sessions.test.ts
   - app/ui/src/transport.ts
   - app/ui/src/transport.test.ts
   - app/ui/src/App.tsx
+  - packages/core/src/stage/runner.ts
+  - packages/core/src/stage/runner.test.ts
+  - packages/core/src/stages/intake.ts
+  - packages/core/src/stages/intake.test.ts
 estimate: L
 commit: ""
 ---
