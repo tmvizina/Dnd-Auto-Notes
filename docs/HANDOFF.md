@@ -76,6 +76,7 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 | `2109d87` | `P2-05` | Per-player voice-mode clustering, calibrated representation and recoverable campaign profile bank | Independent review returned fixture-provenance and journal/schema defects, then passed after tests regenerated seeds 501/502 and verified their truth hashes, strict profile/journal validation was added, and update/revert recovery became idempotent across corrupt or interrupted publications. Embedding, prosody and concatenated purity were each 1.000000; deterministic tie-breaking selected embedding-only at threshold 0.18. Session 502 labelled 4/4 clusters correctly. The full gate passed 462 TypeScript and 70 Python tests plus typecheck, build, lint and format. |
 | `da789f8` | `P4-06` | Replay-safe desktop pipeline streaming, persistent stage ledger, cancellation and run panel | Independent review returned cancellation propagation, publication-boundary rollback, unbounded hung-child handling and custom-I/O rollback defects, then passed after AbortSignal reached core stages, cancellation became deadline-bounded with SIGTERM/SIGKILL escalation, and manifest/QA/metadata rollback used the same injected transactional backend. The final JavaScript suite passed 463 tests with full typecheck and lint; focused UI coverage verifies de-duplication, gaps, progress, cancellation and accessible logs. Formatting-only follow-up: `46bd7f3`. |
 | `45041cc` | `P2-09` | Global monotonic roll-to-speech alignment, robust sequence fit, uncertainty and turn-order timing | Two review rounds returned a greedy matcher, private number parser, missing temporal/die evidence, absent robust fit, discarded turn order and an incorrect gap metric. The orchestrator rewrote the core with a gap-aware dynamic program, shared P2-06 normalization, total/die/speaker/lexical/time scoring, isolated-outlier rejection and piecewise projection. Generated-fixture tests match every announced roll in `order_only` mode and persist turn-order transitions plus quality. The full gate passed 472 TypeScript and 70 Python tests plus typecheck, build, lint and format. |
+| `53988c0` | `P2-07` | Config-driven persona scoring, explainable evidence, quote children and bounded smoothing | Three independent review rounds corrected quote-character assignment, strong-band smoothing, runtime config validation, profile invalidation, the attribution evidence contract and preservation of all nine prosody signals. The final gate passed 478 TypeScript and 70 Python tests plus typecheck, build, lint, format and ticket validation. Empty profile banks degrade to flagged uncertainty, and every decision retains its evidence. |
 
 ## Known risks
 
@@ -87,20 +88,13 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 
 ## Exact next actions
 
-Track A (audio) and track C (persistence) are finished. What remains in phase 1 is the Roll20 chain and the two tickets that consume everything:
+`P2-07` is fully closed. The ticket tool now reports three ready tickets with disjoint declared scopes:
 
-1. **`P1-10`** (QA report) is ready now; read the carried items below before implementation.
-2. **`P2-01`** (VAD) and **`P4-05`** (sessions/intake UI) are also ready and have disjoint scopes.
+1. **`P2-08`** - DM-to-NPC assignment.
+2. **`P2-10`** - adjudicator interface and providers; validation must use fake/local providers only unless the human authorizes paid prompts.
+3. **`P3-01`** - event model and timeline assembly.
 
-`P4-03` (renderer transport and shell) is ready and can proceed in parallel.
-
-Run `npm run tickets -- --ready` rather than trusting this list.
-
-### Carried into `P1-10`
-
-`P1-03` emits three QA codes that `P1-10`'s documented list does not yet contain: `CRAIG_ARCHIVE_EXTRACTED` (info), `CRAIG_NO_TRACKS` (error) and `TRACK_NAME_UNPARSED` (warning). Fold them in when writing that ticket rather than inventing a second list.
-
-`P1-03` also carries a deviation worth knowing about: step 1 asks for the extraction to be "recorded in the manifest", but the `Manifest` contract has no field for it and `contracts/manifest.ts` was outside scope. The archive's sha256 lives in a receipt file beside the extraction, and the fact of extraction surfaces as the `CRAIG_ARCHIVE_EXTRACTED` entry. If a first-class field is wanted, it is a contract change and belongs in its own ticket.
+Assign these from `npm run tickets -- --ready`; do not rely on this prose if ticket state changes.
 
 ### Decision waiting on you
 

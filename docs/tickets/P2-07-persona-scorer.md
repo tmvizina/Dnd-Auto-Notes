@@ -2,7 +2,7 @@
 id: P2-07
 phase: 2
 title: Persona scorer and flagging
-status: in_progress
+status: done
 assignee: "luna-p2-07"
 depends_on: [P2-05, P2-06, P2-09]
 scope:
@@ -12,7 +12,7 @@ scope:
   - packages/core/src/persona/scorer.test.ts
   - packages/core/src/contracts/attribution.ts
 estimate: L
-commit: ""
+commit: "53988c0"
 ---
 
 ## Why
@@ -31,10 +31,10 @@ This is the decision the whole project exists to make. It has to be explainable,
 
 ## Acceptance
 
-- [ ] Weights and thresholds live in a versioned config file; changing them requires no code edit and bumps the stage version.
-- [ ] Every attribution carries the evidence that produced it.
-- [ ] Every uncertain attribution carries a specific reason code.
-- [ ] Quoted speech produces a child attribution with correct time bounds.
-- [ ] Smoothing never overrides a score outside the uncertain band, and every correction is logged.
-- [ ] On the fixture, in-character/out-of-character accuracy against `truth.json` is reported per class in the stage result.
-- [ ] The stage completes with an empty profile bank, flagging everything, without error.
+- [x] Weights and thresholds live in a versioned config file; changing them requires no code edit and bumps the stage version.
+- [x] Every attribution carries the evidence that produced it.
+- [x] Every uncertain attribution carries a specific reason code.
+- [x] Quoted speech produces a child attribution with correct time bounds.
+- [x] Smoothing never overrides a score outside the uncertain band, and every correction is logged.
+- [x] On the fixture, in-character/out-of-character accuracy against `truth.json` is reported per class in the stage result.
+- [x] The stage completes with an empty profile bank, flagging everything, without error.
