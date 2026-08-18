@@ -2,7 +2,7 @@
 id: P4-04
 phase: 4
 title: Sidecar supervision from the main process
-status: in_progress
+status: done
 assignee: "luna-p4-04"
 depends_on: [P4-02, P1-02]
 scope:
@@ -18,7 +18,7 @@ scope:
   - packages/core/src/sidecar/supervisor.ts
   - packages/core/src/sidecar/supervisor.test.ts
 estimate: M
-commit: ""
+commit: "f235a15"
 ---
 
 ## Why
@@ -36,9 +36,9 @@ In the CLI the user starts the sidecar knowingly. In the app it has to be invisi
 
 ## Acceptance
 
-- [ ] Starting a pipeline run with the sidecar stopped starts it and proceeds.
-- [ ] Killing the sidecar mid-run surfaces `unhealthy` and fails the run with a clear message rather than hanging.
-- [ ] A missing venv produces the setup command in the UI and installs nothing.
-- [ ] Quitting the app leaves no orphan Python process.
-- [ ] An externally started sidecar is adopted and is still running after the app quits.
-- [ ] Idle polling costs under 1 % CPU.
+- [x] Starting a pipeline run with the sidecar stopped starts it and proceeds.
+- [x] Killing the sidecar mid-run surfaces `unhealthy` and fails the run with a clear message rather than hanging.
+- [x] A missing venv produces the setup command in the UI and installs nothing.
+- [x] Quitting the app leaves no orphan Python process.
+- [x] An externally started sidecar is adopted and is still running after the app quits.
+- [x] Idle polling costs under 1 % CPU.

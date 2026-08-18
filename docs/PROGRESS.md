@@ -3,7 +3,7 @@
 Single-page status snapshot for the full backlog. Ticket frontmatter remains authoritative; update this file whenever a ticket changes status or records its implementation commit.
 
 **Last updated:** 2026-08-18
-**Overall:** 15 done, 2 in progress, 1 blocked, 34 todo - 52 total (28.8% done)
+**Overall:** 16 done, 1 in progress, 1 blocked, 34 todo - 52 total (30.8% done)
 
 ## Phase 0 — Foundations
 
@@ -63,19 +63,19 @@ Single-page status snapshot for the full backlog. Ticket frontmatter remains aut
 
 ## Phase 4 — Desktop app
 
-| Ticket                                        | Status      | Assignee     | Commit    | Title                                     |
-| --------------------------------------------- | ----------- | ------------ | --------- | ----------------------------------------- |
-| [P4-01](tickets/P4-01-electron-scaffold.md)   | done        | orchestrator | `e46664b` | Electron scaffold                         |
-| [P4-02](tickets/P4-02-ipc-contracts.md)       | done        | orchestrator | `5b0dbd9` | IPC contracts and validation              |
-| [P4-03](tickets/P4-03-renderer-shell.md)      | todo        | —            | —         | Renderer transport and app shell          |
-| [P4-04](tickets/P4-04-sidecar-supervision.md) | in_progress | luna-p4-04   | -         | Sidecar supervision from the main process |
-| [P4-05](tickets/P4-05-sessions-intake-ui.md)  | todo        | —            | —         | Sessions list and intake UI               |
-| [P4-06](tickets/P4-06-run-streaming.md)       | todo        | —            | —         | Pipeline run streaming                    |
-| [P4-07](tickets/P4-07-provider-runner.md)     | todo        | —            | —         | Claude and Codex provider runner          |
-| [P4-08](tickets/P4-08-review-page.md)         | todo        | —            | —         | Flagged-span review page                  |
-| [P4-09](tickets/P4-09-notes-page.md)          | todo        | —            | —         | Notes viewer and editor                   |
-| [P4-10](tickets/P4-10-pdf-export.md)          | todo        | —            | —         | PDF export                                |
-| [P4-11](tickets/P4-11-settings.md)            | todo        | —            | —         | Settings                                  |
+| Ticket                                        | Status | Assignee     | Commit    | Title                                     |
+| --------------------------------------------- | ------ | ------------ | --------- | ----------------------------------------- |
+| [P4-01](tickets/P4-01-electron-scaffold.md)   | done   | orchestrator | `e46664b` | Electron scaffold                         |
+| [P4-02](tickets/P4-02-ipc-contracts.md)       | done   | orchestrator | `5b0dbd9` | IPC contracts and validation              |
+| [P4-03](tickets/P4-03-renderer-shell.md)      | todo   | —            | —         | Renderer transport and app shell          |
+| [P4-04](tickets/P4-04-sidecar-supervision.md) | done   | luna-p4-04   | `f235a15` | Sidecar supervision from the main process |
+| [P4-05](tickets/P4-05-sessions-intake-ui.md)  | todo   | —            | —         | Sessions list and intake UI               |
+| [P4-06](tickets/P4-06-run-streaming.md)       | todo   | —            | —         | Pipeline run streaming                    |
+| [P4-07](tickets/P4-07-provider-runner.md)     | todo   | —            | —         | Claude and Codex provider runner          |
+| [P4-08](tickets/P4-08-review-page.md)         | todo   | —            | —         | Flagged-span review page                  |
+| [P4-09](tickets/P4-09-notes-page.md)          | todo   | —            | —         | Notes viewer and editor                   |
+| [P4-10](tickets/P4-10-pdf-export.md)          | todo   | —            | —         | PDF export                                |
+| [P4-11](tickets/P4-11-settings.md)            | todo   | —            | —         | Settings                                  |
 
 ## Phase 5 — Hardening and release
 
