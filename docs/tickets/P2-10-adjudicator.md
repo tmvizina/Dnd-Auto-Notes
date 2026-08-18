@@ -2,7 +2,7 @@
 id: P2-10
 phase: 2
 title: Adjudicator interface and providers
-status: in_progress
+status: done
 assignee: "luna-p2-10"
 depends_on: [P2-07]
 scope:
@@ -10,7 +10,7 @@ scope:
   - packages/core/src/persona/adjudicate.ts
   - packages/core/src/persona/adjudicate.test.ts
 estimate: L
-commit: ""
+commit: "b4cafdf"
 ---
 
 ## Why
@@ -33,10 +33,10 @@ A few hundred spans per session will genuinely be ambiguous — a whispered asid
 
 ## Acceptance
 
-- [ ] All four providers satisfy the interface; `none` is the default.
-- [ ] The full pipeline completes with `none` and every flag intact.
-- [ ] A malformed CLI stream produces a structured error, not a crash.
-- [ ] Out-of-set labels are rejected.
-- [ ] Adjudicated attributions are marked `source: "llm"` and can be reverted in bulk.
-- [ ] Cache hits skip the provider entirely.
-- [ ] Cancelling mid-batch leaves no orphan child process.
+- [x] All four providers satisfy the interface; `none` is the default.
+- [x] The full pipeline completes with `none` and every flag intact.
+- [x] A malformed CLI stream produces a structured error, not a crash.
+- [x] Out-of-set labels are rejected.
+- [x] Adjudicated attributions are marked `source: "llm"` and can be reverted in bulk.
+- [x] Cache hits skip the provider entirely.
+- [x] Cancelling mid-batch leaves no orphan child process.

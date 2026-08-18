@@ -77,6 +77,8 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 | `da789f8` | `P4-06` | Replay-safe desktop pipeline streaming, persistent stage ledger, cancellation and run panel | Independent review returned cancellation propagation, publication-boundary rollback, unbounded hung-child handling and custom-I/O rollback defects, then passed after AbortSignal reached core stages, cancellation became deadline-bounded with SIGTERM/SIGKILL escalation, and manifest/QA/metadata rollback used the same injected transactional backend. The final JavaScript suite passed 463 tests with full typecheck and lint; focused UI coverage verifies de-duplication, gaps, progress, cancellation and accessible logs. Formatting-only follow-up: `46bd7f3`. |
 | `45041cc` | `P2-09` | Global monotonic roll-to-speech alignment, robust sequence fit, uncertainty and turn-order timing | Two review rounds returned a greedy matcher, private number parser, missing temporal/die evidence, absent robust fit, discarded turn order and an incorrect gap metric. The orchestrator rewrote the core with a gap-aware dynamic program, shared P2-06 normalization, total/die/speaker/lexical/time scoring, isolated-outlier rejection and piecewise projection. Generated-fixture tests match every announced roll in `order_only` mode and persist turn-order transitions plus quality. The full gate passed 472 TypeScript and 70 Python tests plus typecheck, build, lint and format. |
 | `53988c0` | `P2-07` | Config-driven persona scoring, explainable evidence, quote children and bounded smoothing | Three independent review rounds corrected quote-character assignment, strong-band smoothing, runtime config validation, profile invalidation, the attribution evidence contract and preservation of all nine prosody signals. The final gate passed 478 TypeScript and 70 Python tests plus typecheck, build, lint, format and ticket validation. Empty profile banks degrade to flagged uncertainty, and every decision retains its evidence. |
+| `b4cafdf` | `P2-10` | Adjudicator interface, CLI/local providers, safe caching and cancellation | Independent review returned orphan-prone cancellation, incomplete cache identity, missing confidence ceilings and absent hung-child coverage. It passed after actual child closure controlled bounded SIGKILL escalation, provider/model/system/context entered the content hash, and both live and cached responses were constrained by deterministic confidence. Nine focused tests, workspace typecheck, scoped lint and format passed; no real provider or network call was made. |
+| `284f415` | `P2-08` | Deterministic DM narration/NPC attribution and proposal-only NPC discovery | Seven review rounds eliminated PC-to-DM leakage, non-adjacent address evidence, corrupted quote handling, weak name windows, continuity across intervening players, and accidental auto-assignment of newly discovered names. The final focused suite passed 8 tests with workspace typecheck, lint and format. Unknown recurring voices produce review proposals only; registry files are never written. |
 
 ## Known risks
 
@@ -88,13 +90,14 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 
 ## Exact next actions
 
-`P2-07` is fully closed. The ticket tool now reports three ready tickets with disjoint declared scopes:
+`P2-08` and `P2-10` are fully closed; `P3-01` is implemented and awaiting integration. The ticket tool now reports four additional ready tickets:
 
-1. **`P2-08`** - DM-to-NPC assignment.
-2. **`P2-10`** - adjudicator interface and providers; validation must use fake/local providers only unless the human authorizes paid prompts.
-3. **`P3-01`** - event model and timeline assembly.
+1. **`P2-11`** - audio-native adjudicator; no model download or paid call is authorized.
+2. **`P2-12`** - labeling CLI and calibration.
+3. **`P4-07`** - Claude and Codex provider runner; tests must use fakes and must not run paid prompts.
+4. **`P4-08`** - flagged-span review page.
 
-Assign these from `npm run tickets -- --ready`; do not rely on this prose if ticket state changes.
+Assign from `npm run tickets -- --ready`; do not rely on this prose if ticket state changes.
 
 ### Decision waiting on you
 

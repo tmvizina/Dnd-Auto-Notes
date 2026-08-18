@@ -2,14 +2,14 @@
 id: P2-08
 phase: 2
 title: DM to NPC assignment
-status: in_progress
+status: done
 assignee: "luna-p2-08"
 depends_on: [P2-07]
 scope:
   - packages/core/src/persona/dmNpc.ts
   - packages/core/src/persona/dmNpc.test.ts
 estimate: L
-commit: ""
+commit: "284f415"
 ---
 
 ## Why
@@ -32,9 +32,9 @@ The DM is the hardest speaker in the room: one track, one voice box, and an unbo
 
 ## Acceptance
 
-- [ ] DM narration and DM NPC speech separate correctly on the fixture.
-- [ ] A named NPC within the window is assigned; the same voice outside the window falls back to the voice bank.
-- [ ] Two NPCs voiced with the same acoustic cluster are disambiguated by name windows.
-- [ ] An unrecognised NPC voice flags `unknown_npc` with ranked candidates, never a guess.
-- [ ] New-NPC proposals appear in the QA report and write nothing.
-- [ ] No cross-assignment between the DM and players in either direction.
+- [x] DM narration and DM NPC speech separate correctly on the fixture.
+- [x] A named NPC within the window is assigned; the same voice outside the window falls back to the voice bank.
+- [x] Two NPCs voiced with the same acoustic cluster are disambiguated by name windows.
+- [x] An unrecognised NPC voice flags `unknown_npc` with ranked candidates, never a guess.
+- [x] New-NPC proposals appear in the QA report and write nothing.
+- [x] No cross-assignment between the DM and players in either direction.
