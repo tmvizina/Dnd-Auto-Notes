@@ -12,6 +12,7 @@ scope:
   - packages/core/src/stages/features.ts
   - packages/core/src/stages/features.test.ts
   - packages/core/src/contracts/features.ts
+  - packages/core/src/session/io.ts
 estimate: M
 commit: ""
 ---
