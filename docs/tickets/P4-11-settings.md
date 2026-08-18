@@ -2,8 +2,8 @@
 id: P4-11
 phase: 4
 title: Settings
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p4-11"
 depends_on: [P4-03]
 scope:
   - app/ui/src/pages/Settings.tsx
