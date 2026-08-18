@@ -17,6 +17,7 @@ import type { Db } from "../db/db.js";
 import { upsertSession } from "../db/records.js";
 import { writeArtifact } from "../session/session.js";
 import type { Session } from "../session/session.js";
+import { nodeIo, writeFileAtomic } from "../session/io.js";
 import type { FileIo } from "../session/io.js";
 import { hashFile, hashFileIfPresent } from "../stage/hash.js";
 import { runStage } from "../stage/runner.js";
@@ -29,6 +30,10 @@ import type { RollData } from "../intake/roll20/parser.js";
 
 /** The manifest shape produced by the first pipeline stage. */
 export const INTAKE_STAGE_VERSION = 3;
+
+export interface IntakeFileIo extends FileIo {
+  readFile(path: string, encoding: "utf8"): Promise<string>;
+}
 
 export interface IntakeStageOptions {
   readonly session: Session;
@@ -44,7 +49,8 @@ export interface IntakeStageOptions {
   readonly databasePath?: string;
   readonly force?: boolean;
   readonly onProgress?: ProgressFn;
-  readonly io?: FileIo;
+  readonly io?: IntakeFileIo;
+  readonly signal?: AbortSignal;
 }
 
 export type IntakeStageResult = StageResult<Manifest>;
@@ -278,10 +284,47 @@ function mirrorIntakeQa(db: Db, session: Session, report: QaReport): void {
  */
 export async function runIntakeStage(options: IntakeStageOptions): Promise<IntakeStageResult> {
   const { session } = options;
+  const throwIfAborted = (): void => {
+    if (options.signal?.aborted) throw new Error("intake cancelled");
+  };
+  throwIfAborted();
   const campaignRoot = options.campaignRoot ?? join(session.paths.root, "campaign");
   const inputs = await stageInputs(session, campaignRoot);
+  throwIfAborted();
   const qaReusable = await hasValidIntakeQa(session);
   const force = options.force === true || !qaReusable;
+  const publicationPaths = [
+    session.paths.artifact("manifest"),
+    session.paths.artifact("intakeQa"),
+    session.paths.stageMeta("manifest"),
+  ];
+  const publicationIo: IntakeFileIo =
+    options.io === undefined
+      ? {
+          ...nodeIo,
+          readFile: (path, encoding) => readFile(path, encoding),
+        }
+      : options.io;
+  const publicationBackup = await Promise.all(
+    publicationPaths.map(async (path) => {
+      try {
+        return { path, contents: await publicationIo.readFile(path, "utf8") };
+      } catch {
+        return { path, contents: null };
+      }
+    }),
+  );
+  const rollbackPublication = async (): Promise<void> => {
+    await Promise.all(
+      publicationBackup.map(async ({ path, contents }) => {
+        if (contents === null) {
+          await publicationIo.rm(path, { force: true }).catch(() => undefined);
+        } else {
+          await writeFileAtomic(path, contents, publicationIo);
+        }
+      }),
+    );
+  };
 
   const db =
     options.db ?? (options.databasePath === undefined ? null : openDb(options.databasePath));
@@ -300,12 +343,15 @@ export async function runIntakeStage(options: IntakeStageOptions): Promise<Intak
           active_player_ids: options.activePlayerIds ?? null,
         },
         force,
+        ...(options.signal === undefined ? {} : { signal: options.signal }),
         ...(options.onProgress === undefined ? {} : { onProgress: options.onProgress }),
         ...(options.io === undefined ? {} : { io: options.io }),
       },
       async ({ progress }) => {
+        throwIfAborted();
         progress(0.05, "loading campaign registry");
         const registry = await loadRegistry(campaignRoot);
+        throwIfAborted();
         progress(0.2, "measuring Craig tracks");
         const craig = await craigIntake({
           sessionRoot: session.paths.root,
@@ -315,6 +361,7 @@ export async function runIntakeStage(options: IntakeStageOptions): Promise<Intak
             ? {}
             : { alignmentToleranceS: options.alignmentToleranceS }),
         });
+        throwIfAborted();
 
         const qa: QaEntry[] = [...craig.qa];
         let rolls: ManifestRoll[] = [];
@@ -325,6 +372,7 @@ export async function runIntakeStage(options: IntakeStageOptions): Promise<Intak
         } else {
           progress(0.65, "parsing Roll20 capture");
           const parsed = parseRoll20(roll20.raw);
+          throwIfAborted();
           const timing = resolveRoll20Time(parsed.normalized, {
             started_at: craig.recording.started_at,
             duration_s: craig.recording.duration_s,
@@ -343,6 +391,7 @@ export async function runIntakeStage(options: IntakeStageOptions): Promise<Intak
             time_basis: timing.time_basis,
             ...(clockOffset === null ? {} : { clock_offset_s: clockOffset }),
           };
+          throwIfAborted();
         }
 
         const rawManifest: Manifest = {
@@ -362,8 +411,11 @@ export async function runIntakeStage(options: IntakeStageOptions): Promise<Intak
         });
         const manifest: Manifest = { ...rawManifest, qa: report.entries };
         progress(0.95, "writing intake manifest");
+        throwIfAborted();
         await writeArtifact(session, "manifest", manifest, options.io);
+        throwIfAborted();
         await writeIntakeQaReport(session, report, options.io);
+        throwIfAborted();
         if (db !== null) mirrorIntakeQa(db, session, report);
         progress(1, "intake complete");
         return manifest;
@@ -376,6 +428,9 @@ export async function runIntakeStage(options: IntakeStageOptions): Promise<Intak
       mirrorIntakeQa(db, session, await readIntakeQaReport(session));
     }
     return result;
+  } catch (error) {
+    if (options.signal?.aborted) await rollbackPublication();
+    throw error;
   } finally {
     if (options.db === undefined && db !== null) closeDb(db);
   }

@@ -27,6 +27,7 @@ import {
   sidecarRepoRootForSetting,
 } from "./main.js";
 import { createSettingsHandlers } from "./handlers/settings.js";
+import { RunManager } from "./runs/index.js";
 
 describe("desktop quit supervision", () => {
   it("composes persisted path settings into the next desktop runtime", () => {
@@ -180,5 +181,35 @@ describe("desktop quit supervision", () => {
         ]),
       );
     });
+  });
+
+  it("routes managed runs through replay-safe subscriptions with run-local sequences", async () => {
+    const events: Array<{
+      readonly runId: string;
+      readonly sequence: number;
+      readonly type: string;
+    }> = [];
+    const supervisor = {
+      state: { status: "ready" as const, restartAttempt: 0 },
+      ensureRunning: vi.fn(async () => supervisor.state),
+      getLogTail: vi.fn(async () => []),
+    };
+    const manager = new RunManager();
+    const handlers = createSidecarHandlers(supervisor, {
+      sessionsRoot: "C:\\missing\\sessions",
+      campaignRoot: "C:\\missing\\campaign",
+      manager,
+      emit: (event) => {
+        if ("runId" in event && "sequence" in event)
+          events.push({ runId: event.runId, sequence: event.sequence, type: event.type });
+      },
+    });
+    const run = await handlers.pipelineRun?.({ sessionId: "missing" }, {} as never);
+    if (run === undefined) throw new Error("pipeline handler did not return a run");
+    await vi.waitFor(() => expect(events.some((event) => event.type === "run_failed")).toBe(true));
+    const replay = await handlers.runsSubscribe?.({ runId: run.runId }, {} as never);
+    expect(replay?.replay.map((event) => event.runId)).toEqual([run.runId, run.runId, run.runId]);
+    expect(replay?.replay.map((event) => event.sequence)).toEqual([1, 2, 3]);
+    expect(new Set(events.map((event) => event.runId))).toEqual(new Set([run.runId]));
   });
 });

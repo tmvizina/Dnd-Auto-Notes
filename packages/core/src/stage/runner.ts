@@ -13,6 +13,7 @@ export type ProgressFn = (fraction: number, message: string) => void;
 export interface StageContext {
   readonly session: Session;
   readonly progress: ProgressFn;
+  readonly signal?: AbortSignal;
 }
 
 export interface RunStageOptions {
@@ -29,6 +30,7 @@ export interface RunStageOptions {
   force?: boolean;
   onProgress?: ProgressFn;
   io?: FileIo;
+  signal?: AbortSignal;
 }
 
 export interface StageResult<T> {
@@ -73,13 +75,18 @@ export async function runStage<T>(
 ): Promise<StageResult<T>> {
   const { session, stage, version, output, inputs, params, force = false, io } = options;
   const progress: ProgressFn = options.onProgress ?? (() => undefined);
+  const throwIfAborted = (): void => {
+    if (options.signal?.aborted) throw new Error("stage cancelled");
+  };
 
   const metaPath = session.paths.stageMeta(output);
   const artifactPath = session.paths.artifact(output);
 
   const inputHashes: Record<string, string> = {};
   for (const input of inputs) {
+    throwIfAborted();
     const digest = await hashFileIfPresent(input);
+    throwIfAborted();
     // A declared-but-absent input is recorded as such: its later appearance
     // must count as a change.
     inputHashes[relative(session.paths.root, input).replaceAll("\\", "/")] =
@@ -88,6 +95,7 @@ export async function runStage<T>(
   const paramsHash = hashParams(params ?? {});
 
   const previous = await readExistingMeta(metaPath);
+  throwIfAborted();
   const reusable =
     !force &&
     previous !== null &&
@@ -103,7 +111,12 @@ export async function runStage<T>(
 
   const startedAt = new Date();
   try {
-    const value = await fn({ session, progress });
+    const value = await fn({
+      session,
+      progress,
+      ...(options.signal === undefined ? {} : { signal: options.signal }),
+    });
+    throwIfAborted();
     const finishedAt = new Date();
     const meta: StageMeta = {
       stage,
@@ -118,9 +131,12 @@ export async function runStage<T>(
     };
     // Meta is written last: if it exists and says ok, the artifact beside it is
     // complete. The reverse order would let a crash advertise a partial result.
+    throwIfAborted();
     await writeJsonAtomic(metaPath, meta, io);
+    throwIfAborted();
     return { stage, skipped: false, meta, value };
   } catch (error) {
+    if (options.signal?.aborted) throw error;
     const finishedAt = new Date();
     const meta: StageMeta = {
       stage,

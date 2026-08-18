@@ -13,6 +13,7 @@ import {
   runIntakeStage,
 } from "../index.js";
 import { listFlags } from "../db/records.js";
+import { nodeIo } from "../session/io.js";
 
 const generator = join(process.cwd(), "tools", "generate-fixture.mjs");
 let root: string;
@@ -153,6 +154,70 @@ describe("public intake stage", () => {
 
     const afterValid = await runIntakeStage({ session });
     expect(afterValid.skipped).toBe(true);
+  });
+
+  it("rolls back publication when cancellation lands after manifest publication", async () => {
+    const session = await fixtureSession(clean);
+    await runIntakeStage({ session, force: true });
+    const paths = [
+      session.paths.artifact("manifest"),
+      session.paths.artifact("intakeQa"),
+      session.paths.stageMeta("manifest"),
+    ];
+    const before = paths.map((path) => readFileSync(path, "utf8"));
+    const controller = new AbortController();
+    const io = {
+      ...nodeIo,
+      readFile: async (path: string): Promise<string> => readFileSync(path, "utf8"),
+      rename: async (from: string, to: string): Promise<void> => {
+        await nodeIo.rename(from, to);
+        if (to.endsWith("manifest.json")) controller.abort();
+      },
+    };
+    await expect(
+      runIntakeStage({ session, force: true, signal: controller.signal, io }),
+    ).rejects.toThrow("intake cancelled");
+    expect(paths.map((path) => readFileSync(path, "utf8"))).toEqual(before);
+  });
+
+  it("rolls back every publication boundary through the injected IO backend", async () => {
+    const session = await fixtureSession(clean);
+    const paths = [
+      session.paths.artifact("manifest"),
+      session.paths.artifact("intakeQa"),
+      session.paths.stageMeta("manifest"),
+    ];
+    for (const abortPath of paths) {
+      const original = new Map(paths.map((path, index) => [path, `old-${String(index)}`]));
+      const files = new Map(original);
+      const controller = new AbortController();
+      const io = {
+        mkdir: async (): Promise<void> => undefined,
+        readFile: async (path: string): Promise<string> => {
+          const value = files.get(path);
+          if (value === undefined) throw new Error(`missing ${path}`);
+          return value;
+        },
+        writeFile: async (path: string, data: string | Uint8Array): Promise<void> => {
+          files.set(path, typeof data === "string" ? data : Buffer.from(data).toString("utf8"));
+        },
+        rename: async (from: string, to: string): Promise<void> => {
+          const value = files.get(from);
+          if (value === undefined) throw new Error(`missing temporary ${from}`);
+          files.delete(from);
+          files.set(to, value);
+          if (to === abortPath) controller.abort();
+        },
+        rm: async (path: string): Promise<void> => {
+          files.delete(path);
+        },
+      };
+      await expect(
+        runIntakeStage({ session, force: true, signal: controller.signal, io }),
+      ).rejects.toThrow(/cancelled/u);
+      expect(new Map(paths.map((path) => [path, files.get(path)]))).toEqual(original);
+      expect([...files.keys()].filter((path) => path.includes(".tmp"))).toEqual([]);
+    }
   });
 
   it("mirrors exactly the three defect entries into the open flags", async () => {

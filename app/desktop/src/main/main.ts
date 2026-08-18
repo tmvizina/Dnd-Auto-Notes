@@ -21,6 +21,8 @@ import { getUiRoot, getUserDataPaths, type DesktopUserDataPaths } from "./paths.
 import { DesktopSidecarSupervisor, type SidecarState } from "./sidecar/index.js";
 import { structuredError, type DesktopEvent, type RunEvent } from "../shared/contracts.js";
 import { createUiUrl, isAllowedUiUrl, registerUiProtocol, registerUiScheme } from "./uiProtocol.js";
+import { openDb, type Db } from "@dnd/core";
+import { RunManager } from "./runs/index.js";
 
 const DEV_URL_ENV = ["DND_DEV_SERVER_URL", "VITE_DEV_SERVER_URL", "ELECTRON_RENDERER_URL"] as const;
 const UI_ORIGIN_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
@@ -38,6 +40,8 @@ let sessionHandlers: SessionHandlers | null = null;
 let desktopPaths: DesktopUserDataPaths | null = null;
 let settingsHandlers: SettingsHandlers | null = null;
 let runtimeSettings: SettingsMap = {};
+let desktopDb: Db | null = null;
+let runManager: RunManager | null = null;
 const mainDirectory = dirname(fileURLToPath(import.meta.url));
 
 function localDevUrl(): string | null {
@@ -197,9 +201,12 @@ function setupSessionHandlers(paths: DesktopUserDataPaths, settings: SettingsMap
     campaignRoot: campaignRootForDesktop(settings),
     sidecarRepoRoot: desktopRepoRoot(),
   });
+  desktopDb?.close();
+  desktopDb = openDb(join(paths.data, "notes.db"));
+  runManager = new RunManager({ db: desktopDb });
   sessionHandlers = createSessionHandlers({
     sessionsRoot: roots.sessionsRoot,
-    databasePath: join(paths.data, "notes.db"),
+    db: desktopDb,
     campaignRoot: roots.campaignRoot,
     emitCopyProgress: (event) => {
       if (mainWindow !== null)
@@ -232,6 +239,7 @@ interface PipelineRuntimeOptions {
   readonly sessionsRoot: string;
   readonly campaignRoot: string;
   readonly emit?: (event: DesktopEvent) => void;
+  readonly manager?: RunManager;
 }
 
 function runtimeEmitter(options: PipelineRuntimeOptions): (event: DesktopEvent) => void {
@@ -309,6 +317,63 @@ function startPipelineRun(
   })();
 }
 
+function startManagedPipelineRun(
+  runId: string,
+  request: {
+    readonly sessionId: string;
+    readonly stages?: readonly string[];
+    readonly force?: boolean;
+  },
+  controller: AbortController,
+  options: PipelineRuntimeOptions,
+): string {
+  const manager = options.manager;
+  if (manager === undefined) throw new Error("run manager is unavailable");
+  const stages =
+    request.stages === undefined || request.stages.length === 0 ? ["intake"] : request.stages;
+  const handle = manager.run({
+    runId,
+    sessionId: request.sessionId,
+    stages,
+    signal: controller.signal,
+    onCancel: () => controller.abort(),
+    producer: async (context) => {
+      for (const stage of stages) {
+        context.stageStarted(stage);
+        if (stage !== "intake" || stages.length !== 1)
+          throw new Error(`stage ${stage} is not implemented yet`);
+        const sessionRoot = await resolvePipelineSessionRoot(
+          options.sessionsRoot,
+          request.sessionId,
+        );
+        const result = await runSessionIntake({
+          sessionRoot,
+          campaignRoot: options.campaignRoot,
+          force: request.force === true,
+          signal: context.signal,
+          onProgress: (fraction, message) => {
+            if (!context.signal.aborted) context.stageProgress(stage, fraction, message);
+          },
+        });
+        if (context.signal.aborted) throw new Error("pipeline run was cancelled");
+        if (result.skipped) context.emit({ type: "stage_skipped", stage });
+        else
+          context.emit({
+            type: "stage_completed",
+            stage,
+            durationS: Math.max(0, Math.round(result.meta.duration_s)),
+          });
+      }
+    },
+  });
+  manager.subscribe({ runId: handle.runId }, (event) => {
+    const emit = runtimeEmitter(options);
+    emit(event);
+  });
+  void handle.done.finally(() => acceptedPipelineRuns.complete(handle.runId));
+  return handle.runId;
+}
+
 export function createSidecarHandlers(
   supervisor: Pick<DesktopSidecarSupervisor, "state" | "ensureRunning" | "getLogTail"> & {
     readonly client?: () => {
@@ -347,13 +412,35 @@ export function createSidecarHandlers(
       const runId = randomUUID();
       const controller = new AbortController();
       acceptedPipelineRuns.accept(runId, controller);
+      if (pipelineOptions?.manager !== undefined) {
+        startManagedPipelineRun(runId, request, controller, pipelineOptions);
+        return { runId };
+      }
       if (pipelineOptions !== undefined)
         startPipelineRun(runId, request, controller, pipelineOptions);
       return { runId };
     },
-    pipelineCancel: ({ runId }: { runId: string }) => {
+    pipelineCancel: async ({ runId }: { runId: string }) => {
+      if (pipelineOptions?.manager !== undefined) {
+        try {
+          return {
+            cancelled: await pipelineOptions.manager.cancel(runId, "pipeline run cancelled"),
+          };
+        } catch {
+          return { cancelled: false };
+        }
+      }
       return { cancelled: acceptedPipelineRuns.cancel(runId) };
     },
+    runsSubscribe: (request) => {
+      if (pipelineOptions?.manager === undefined) throw new Error("run manager is unavailable");
+      return pipelineOptions.manager.subscribe(request, (event) => {
+        if (mainWindow !== null) sendOutboundEvent(mainWindow.webContents, event);
+      });
+    },
+    runsUnsubscribe: ({ subscriptionId }) => ({
+      unsubscribed: pipelineOptions?.manager?.unsubscribe(subscriptionId) ?? false,
+    }),
   };
 }
 
@@ -366,6 +453,7 @@ function sidecarHandlers(): IpcHandlerMap {
       : createSidecarHandlers(sidecar, {
           sessionsRoot: runtimeSettings.sessionsRoot ?? desktopPaths.sessions,
           campaignRoot: campaignRootForDesktop(),
+          ...(runManager === null ? {} : { manager: runManager }),
         });
   return { ...sessions, ...settings, ...pipeline };
 }
@@ -531,6 +619,9 @@ if (!hasSingleInstanceLock) {
     void stopSidecarOnce().finally(() => {
       sessionHandlers?.dispose();
       sessionHandlers = null;
+      desktopDb?.close();
+      desktopDb = null;
+      runManager = null;
       app.quit();
     });
   });

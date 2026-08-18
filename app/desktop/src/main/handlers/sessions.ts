@@ -848,6 +848,7 @@ export interface SessionIntakeOptions {
   readonly campaignRoot: string;
   readonly force: boolean;
   readonly onProgress?: (fraction: number, message: string) => void;
+  readonly signal?: AbortSignal;
 }
 
 /** Use a safe session-local registry when present so mapping edits affect reruns. */
@@ -881,5 +882,6 @@ export async function runSessionIntake(options: SessionIntakeOptions): Promise<I
     campaignRoot: await resolveCampaignRoot(sessionRoot, options.campaignRoot),
     force: options.force,
     ...(options.onProgress === undefined ? {} : { onProgress: options.onProgress }),
+    ...(options.signal === undefined ? {} : { signal: options.signal }),
   });
 }

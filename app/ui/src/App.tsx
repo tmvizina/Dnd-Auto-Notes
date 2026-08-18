@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { AppHeader, Rail, StatusStrip, type ProviderStatus } from "./components.js";
+import { RunPanel } from "./components/RunPanel.js";
 import {
   IntakePage,
   NotesPage,
@@ -249,6 +250,9 @@ export function App({
     transport.kind === "browser" ? BROWSER_SIDECAR : { status: "stopped" },
   );
   const [activeRuns, setActiveRuns] = useState<ReadonlySet<string>>(() => new Set());
+  const [runIdsBySession, setRunIdsBySession] = useState<ReadonlyMap<string, string>>(
+    () => new Map(),
+  );
   const [intakePaths, setIntakePaths] = useState<IntakePageProps["paths"]>();
   const [intakeQa, setIntakeQa] = useState<IntakePageProps["qa"]>([]);
   const [intakeSuggestions, setIntakeSuggestions] = useState<readonly MappingSuggestion[]>([]);
@@ -360,15 +364,32 @@ export function App({
     [transport],
   );
 
+  const startPipeline = useCallback(
+    async (request: {
+      sessionId: string;
+      stages: readonly string[];
+      force: boolean;
+    }): Promise<string> => {
+      const response = await transport.pipeline.run(request);
+      setRunIdsBySession((current) => {
+        const next = new Map(current);
+        next.set(request.sessionId, response.runId);
+        return next;
+      });
+      return response.runId;
+    },
+    [transport],
+  );
+
   const rerunAttribution = useCallback<NonNullable<SettingsPageProps["onRerun"]>>(async () => {
     if (selectedSession === null)
       throw new Error("Choose a session before re-running attribution.");
-    await transport.pipeline.run({
+    await startPipeline({
       sessionId: selectedSession.sessionId,
       stages: ["persona"],
       force: true,
     });
-  }, [selectedSession, transport]);
+  }, [selectedSession, startPipeline]);
 
   const selectSession = useCallback(
     (session: SessionSummary): void => {
@@ -467,7 +488,7 @@ export function App({
       setIntakeState("running");
       setIntakeProgress({ stage: "intake", fraction: 0, message: "Starting intake..." });
       try {
-        await transport.pipeline.run({
+        await startPipeline({
           sessionId: selectedSession.sessionId,
           stages: ["intake"],
           force,
@@ -478,7 +499,7 @@ export function App({
         throw error;
       }
     },
-    [selectedSession, transport],
+    [selectedSession, startPipeline],
   );
 
   const saveMappings = useCallback(
@@ -587,22 +608,34 @@ export function App({
   const sessionDate = selectedSession?.date;
   const page =
     intakeOpen && route === "sessions" ? (
-      <IntakePage
-        {...(intakeError === undefined ? {} : { error: intakeError })}
-        {...(intakePaths === undefined ? {} : { paths: intakePaths })}
-        copyProgress={intakeCopyProgress}
-        onCopyPath={copyToClipboard}
-        onDropFiles={copyDroppedFiles}
-        onOpenMapping={openMapping}
-        onRevealPath={revealPath}
-        onRunIntake={runIntake}
-        onSaveMappings={saveMappings}
-        {...(intakeProgress === undefined ? {} : { progress: intakeProgress })}
-        qa={intakeQa}
-        session={selectedSession}
-        state={intakeState}
-        suggestions={intakeSuggestions}
-      />
+      <>
+        <IntakePage
+          {...(intakeError === undefined ? {} : { error: intakeError })}
+          {...(intakePaths === undefined ? {} : { paths: intakePaths })}
+          copyProgress={intakeCopyProgress}
+          onCopyPath={copyToClipboard}
+          onDropFiles={copyDroppedFiles}
+          onOpenMapping={openMapping}
+          onRevealPath={revealPath}
+          onRunIntake={runIntake}
+          onSaveMappings={saveMappings}
+          {...(intakeProgress === undefined ? {} : { progress: intakeProgress })}
+          qa={intakeQa}
+          session={selectedSession}
+          state={intakeState}
+          suggestions={intakeSuggestions}
+        />
+        <RunPanel
+          runId={
+            selectedSession === null
+              ? null
+              : (runIdsBySession.get(selectedSession.sessionId) ?? null)
+          }
+          stageNames={["intake"]}
+          title="Pipeline run"
+          transport={transport}
+        />
+      </>
     ) : (
       pageForRoute(
         route,
