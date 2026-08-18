@@ -2,8 +2,8 @@
 id: P0-06
 phase: 0
 title: Session contracts and the stage runner
-status: todo
-assignee: ""
+status: approved
+assignee: "orchestrator"
 depends_on: [P0-01]
 scope:
   - packages/core/src/contracts/**
@@ -32,14 +32,29 @@ Every later ticket reads and writes these shapes. Fixing them once, in one place
 
 ## Acceptance
 
-- [ ] Round-trip test per artifact: write, read, validator accepts; a mutated artifact is rejected with a useful message.
-- [ ] Re-running an unchanged stage returns `skipped: true` and leaves the artifact mtime untouched.
-- [ ] Changing one input byte causes a re-run.
-- [ ] Changing the stage version causes a re-run.
-- [ ] `force: true` always re-runs, including immediately after a successful run.
-- [ ] A throwing stage leaves the previous artifact intact and records `status: "error"`.
-- [ ] Artifact writes are atomic: a fault-injected kill mid-write leaves either the old file or the new one, never a truncated one.
+- [x] Round-trip test per artifact: write, read, validator accepts; a mutated artifact is rejected with a useful message.
+- [x] Re-running an unchanged stage returns `skipped: true` and leaves the artifact mtime untouched.
+- [x] Changing one input byte causes a re-run.
+- [x] Changing the stage version causes a re-run.
+- [x] `force: true` always re-runs, including immediately after a successful run.
+- [x] A throwing stage leaves the previous artifact intact and records `status: "error"`.
+- [x] Artifact writes are atomic: a fault-injected kill mid-write leaves either the old file or the new one, never a truncated one.
 
 ## Notes
 
 "Never blocks a re-run" is a hard project rule — see `AGENTS.md`. Model the stage-meta shape on Audio Forge's job record: `status`, `progress`, `message`, `error`, `created_at`, `finished_at`.
+
+## Delivered
+
+Zod for both types and runtime validation, one schema per artifact in `packages/core/src/contracts/`, paths frozen in `ARTIFACTS`, and `ARTIFACT_SCHEMAS` binding name to contract so `readArtifact`/`writeArtifact` are generic over the artifact name and still fully typed. 53 tests across contracts, session and stage; 90 in the suite overall.
+
+`writeArtifact` validates **before** writing, so an artifact that violates its contract never reaches disk — the failure lands where it was caused rather than three stages later.
+
+Two things the ticket did not ask for but the work demanded:
+
+- **`persona` depended on a stage that ran after it.** The registry test "never requires an artifact no earlier stage produces" failed on the ordering taken straight from `docs/PLAN.md`: persona scores `roll_prox`, which needs anchored rolls from `align`. The real order is intake → transcript → features → **align → persona** → outline → notes. Artifact directories were renumbered to match (`work/04-align`, `work/05-persona`) and `docs/session-layout.md` corrected, which is outside the stated scope but leaving the contract and the doc contradicting each other would be worse.
+- **`sessionIdFrom` mangled accented titles.** NFKD splits `é` into `e` plus a combining mark; the mark is neither Letter nor Number, so it became a separator and "Séance" slugged to `se-ance`. Combining marks are now stripped after normalisation.
+
+Also: `src/testing/fixtures.ts` is excluded from `tsconfig.build.json`, so test-support code does not ship in `dist` — the same rule P4-07 applies to the deterministic fake runner.
+
+Acceptance evidence, all from actual runs: round-trip and corruption tests are parameterised over every artifact; a re-run with nothing changed returns `skipped: true` and leaves the artifact's mtime untouched; one changed input byte, a bumped version, changed params, a deleted artifact, an unreadable `_stage.json`, and `force: true` each cause a re-run; params hashing ignores key order but respects array order; a throwing stage leaves the previous artifact byte-identical and records `status: "error"`; and injected `writeFile`/`rename` failures leave the old file intact with no temp file left behind.

@@ -29,8 +29,8 @@ sessions/
       01-intake/manifest.json        + _stage.json
       02-transcript/utterances.json  + _stage.json
       03-features/features.json      + _stage.json
-      04-persona/attribution.json    + _stage.json
-      05-align/timeline.json         + _stage.json
+      04-align/timeline.json         + _stage.json
+      05-persona/attribution.json    + _stage.json
       06-outline/events.json         + _stage.json
       07-notes/qa.json               + _stage.json
     media/
@@ -133,7 +133,7 @@ The merged, ordered timeline. One record per utterance, an utterance being a VAD
 }
 ```
 
-## `work/04-persona/attribution.json`
+## `work/05-persona/attribution.json`
 
 ```json
 {
