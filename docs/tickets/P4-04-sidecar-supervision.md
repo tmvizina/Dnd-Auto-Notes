@@ -7,6 +7,16 @@ assignee: "luna-p4-04"
 depends_on: [P4-02, P1-02]
 scope:
   - app/desktop/src/main/sidecar/**
+  - app/desktop/src/main/main.ts
+  - app/desktop/src/main/main.test.ts
+  - app/desktop/src/main/ipc.ts
+  - app/desktop/src/main/ipc.test.ts
+  - app/desktop/src/shared/contracts.ts
+  - app/desktop/src/shared/contracts.test.ts
+  - app/desktop/src/preload/index.ts
+  - app/desktop/src/preload/index.test.ts
+  - packages/core/src/sidecar/supervisor.ts
+  - packages/core/src/sidecar/supervisor.test.ts
 estimate: M
 commit: ""
 ---
