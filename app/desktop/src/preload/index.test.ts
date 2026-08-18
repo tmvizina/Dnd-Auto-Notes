@@ -141,4 +141,30 @@ describe("preload bridge", () => {
     });
     expect(invoke).toHaveBeenCalledWith(CHANNELS.sidecar.logs, success({ maxLines: 5 }));
   });
+
+  it("validates and forwards the session copy operation", async () => {
+    const invoke = vi.fn(async (): Promise<unknown> =>
+      success({ copyId: "copy-1", destinationName: "track.wav" }),
+    );
+    const fake: IpcRendererLike = { invoke, on: vi.fn(), removeListener: vi.fn() };
+    const bridge = buildBridge(fake);
+    await expect(
+      bridge.sessions.copy({
+        sessionId: "2026-01-01-session",
+        kind: "craig",
+        sourcePath: "C:\\incoming\\track.wav",
+      }),
+    ).resolves.toEqual({
+      ok: true,
+      value: { copyId: "copy-1", destinationName: "track.wav" },
+    });
+    expect(invoke).toHaveBeenCalledWith(
+      CHANNELS.sessions.copy,
+      success({
+        sessionId: "2026-01-01-session",
+        kind: "craig",
+        sourcePath: "C:\\incoming\\track.wav",
+      }),
+    );
+  });
 });

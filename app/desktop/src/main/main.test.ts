@@ -92,4 +92,28 @@ describe("desktop quit supervision", () => {
     ]);
     expect(tracker.cancel("run-1")).toBe(false);
   });
+
+  it("starts the canonical intake runner and emits a structured missing-session failure", async () => {
+    const events: unknown[] = [];
+    const supervisor = {
+      state: { status: "ready" as const, restartAttempt: 0 },
+      ensureRunning: vi.fn(async () => supervisor.state),
+      getLogTail: vi.fn(async () => []),
+    };
+    const handlers = createSidecarHandlers(supervisor, {
+      sessionsRoot: "C:\\missing\\sessions",
+      campaignRoot: "C:\\missing\\campaign",
+      emit: (event) => events.push(event),
+    });
+    const result = await handlers.pipelineRun?.({ sessionId: "2026-01-01-session" }, {} as never);
+    expect(result).toMatchObject({ runId: expect.any(String) });
+    await vi.waitFor(() => {
+      expect(events).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ type: "stage_started", stage: "intake" }),
+          expect.objectContaining({ type: "run_failed" }),
+        ]),
+      );
+    });
+  });
 });

@@ -46,6 +46,31 @@ interface PlainRecord {
   readonly replayCursor?: unknown;
   readonly replayTruncated?: unknown;
   readonly unsubscribed?: unknown;
+  readonly copyId?: unknown;
+  readonly destinationName?: unknown;
+  readonly kind?: unknown;
+  readonly sourcePath?: unknown;
+  readonly revealed?: unknown;
+  readonly entries?: unknown;
+  readonly severity?: unknown;
+  readonly hint?: unknown;
+  readonly subject?: unknown;
+  readonly suggestions?: unknown;
+  readonly observed?: unknown;
+  readonly exact?: unknown;
+  readonly candidates?: unknown;
+  readonly playerId?: unknown;
+  readonly displayName?: unknown;
+  readonly score?: unknown;
+  readonly matchedOn?: unknown;
+  readonly decisions?: unknown;
+  readonly saved?: unknown;
+  readonly craig?: unknown;
+  readonly roll20?: unknown;
+  readonly paths?: unknown;
+  readonly bytesCopied?: unknown;
+  readonly totalBytes?: unknown;
+  readonly fraction?: unknown;
 }
 
 const isRecord = (value: unknown): value is PlainRecord =>
@@ -63,6 +88,10 @@ const CHANNEL_VALUES = {
     list: "dnd/sessions/list",
     get: "dnd/sessions/get",
     create: "dnd/sessions/create",
+    copy: "dnd/sessions/copy",
+    reveal: "dnd/sessions/reveal",
+    qa: "dnd/sessions/qa",
+    mapping: "dnd/sessions/mapping",
   },
   pipeline: {
     run: "dnd/pipeline/run",
@@ -399,6 +428,7 @@ export interface SessionsGetRequest {
 
 export interface SessionsGetResponse {
   readonly session: SessionSummary | null;
+  readonly paths?: SessionDropPaths;
 }
 
 export interface SessionsCreateRequest {
@@ -410,6 +440,81 @@ export interface SessionsCreateRequest {
 
 export interface SessionsCreateResponse {
   readonly session: SessionSummary;
+  readonly paths?: SessionDropPaths;
+}
+
+export type SessionDropKind = "craig" | "roll20";
+
+export interface SessionDropPaths {
+  readonly craig: string;
+  readonly roll20: string;
+}
+
+export interface SessionsCopyRequest {
+  readonly sessionId: string;
+  readonly kind: SessionDropKind;
+  readonly sourcePath: string;
+}
+
+export interface SessionsCopyResponse {
+  readonly copyId: string;
+  readonly destinationName: string;
+}
+
+export interface SessionsRevealRequest {
+  readonly sessionId: string;
+  readonly kind: SessionDropKind;
+}
+
+export interface SessionsRevealResponse {
+  readonly revealed: boolean;
+}
+
+export interface IntakeQaEntry {
+  readonly code: string;
+  readonly severity: "error" | "warning" | "info";
+  readonly message: string;
+  readonly subject?: string;
+  readonly hint?: string;
+}
+
+export interface MappingCandidate {
+  readonly playerId: string;
+  readonly displayName: string;
+  readonly score: number;
+  readonly matchedOn: string;
+}
+
+export interface MappingSuggestion {
+  readonly observed: string;
+  readonly kind: "discord" | "roll20";
+  readonly exact: string | null;
+  readonly candidates: readonly MappingCandidate[];
+}
+
+export interface SessionsQaRequest {
+  readonly sessionId: string;
+}
+
+export interface SessionsQaResponse {
+  readonly entries: readonly IntakeQaEntry[];
+  readonly grade: string | null;
+  readonly suggestions: readonly MappingSuggestion[];
+}
+
+export interface SessionsMappingDecision {
+  readonly observed: string;
+  readonly kind: "discord" | "roll20";
+  readonly playerId: string | null;
+}
+
+export interface SessionsMappingRequest {
+  readonly sessionId: string;
+  readonly decisions: readonly SessionsMappingDecision[];
+}
+
+export interface SessionsMappingResponse {
+  readonly saved: boolean;
 }
 
 export interface PipelineRunRequest {
@@ -461,6 +566,17 @@ export interface StageProgressEvent {
   readonly message?: string;
 }
 
+export interface CopyProgressEvent {
+  readonly type: "copy_progress";
+  readonly sequence: number;
+  readonly runId: string;
+  readonly kind: SessionDropKind;
+  readonly progress: number;
+  readonly bytesCopied: number;
+  readonly totalBytes: number;
+  readonly message?: string;
+}
+
 export interface StageSkippedEvent {
   readonly type: "stage_skipped";
   readonly sequence: number;
@@ -508,6 +624,7 @@ export interface RunLogEvent {
 export type RunEvent =
   | StageStartedEvent
   | StageProgressEvent
+  | CopyProgressEvent
   | StageSkippedEvent
   | StageCompletedEvent
   | StageFailedEvent
@@ -580,6 +697,10 @@ export interface IpcRequestMap {
   sessionsList: SessionsListRequest;
   sessionsGet: SessionsGetRequest;
   sessionsCreate: SessionsCreateRequest;
+  sessionsCopy: SessionsCopyRequest;
+  sessionsReveal: SessionsRevealRequest;
+  sessionsQa: SessionsQaRequest;
+  sessionsMapping: SessionsMappingRequest;
   pipelineRun: PipelineRunRequest;
   pipelineCancel: PipelineCancelRequest;
   runsSubscribe: RunsSubscribeRequest;
@@ -594,6 +715,10 @@ export interface IpcResponseMap {
   sessionsList: SessionsListResponse;
   sessionsGet: SessionsGetResponse;
   sessionsCreate: SessionsCreateResponse;
+  sessionsCopy: SessionsCopyResponse;
+  sessionsReveal: SessionsRevealResponse;
+  sessionsQa: SessionsQaResponse;
+  sessionsMapping: SessionsMappingResponse;
   pipelineRun: PipelineRunResponse;
   pipelineCancel: PipelineCancelResponse;
   runsSubscribe: RunsSubscribeResponse;
@@ -612,6 +737,10 @@ const operationForChannel = new Map<string, IpcOperation>([
   [CHANNELS.sessions.list, "sessionsList"],
   [CHANNELS.sessions.get, "sessionsGet"],
   [CHANNELS.sessions.create, "sessionsCreate"],
+  [CHANNELS.sessions.copy, "sessionsCopy"],
+  [CHANNELS.sessions.reveal, "sessionsReveal"],
+  [CHANNELS.sessions.qa, "sessionsQa"],
+  [CHANNELS.sessions.mapping, "sessionsMapping"],
   [CHANNELS.pipeline.run, "pipelineRun"],
   [CHANNELS.pipeline.cancel, "pipelineCancel"],
   [CHANNELS.runs.subscribe, "runsSubscribe"],
@@ -660,6 +789,70 @@ function parseSessionSummary(value: unknown, context: string): SessionSummary {
   };
 }
 
+function parseDropPaths(value: unknown, context: string): SessionDropPaths {
+  const record = parseObject(value, ["craig", "roll20"], context);
+  return {
+    craig: requiredString(record.craig, `${context}.craig`, IPC_LIMITS.maxStringLength),
+    roll20: requiredString(record.roll20, `${context}.roll20`, IPC_LIMITS.maxStringLength),
+  };
+}
+
+function parseQaEntry(value: unknown, context: string): IntakeQaEntry {
+  const record = parseObject(value, ["code", "severity", "message", "subject", "hint"], context);
+  if (record.severity !== "error" && record.severity !== "warning" && record.severity !== "info")
+    throw invalid(ERROR_CODES.invalidValue, `${context}.severity is invalid`, {
+      field: `${context}.severity`,
+    });
+  return {
+    code: requiredString(record.code, `${context}.code`, 128),
+    severity: record.severity,
+    message: requiredString(record.message, `${context}.message`),
+    ...(record.subject === undefined
+      ? {}
+      : { subject: requiredString(record.subject, `${context}.subject`) }),
+    ...(record.hint === undefined ? {} : { hint: requiredString(record.hint, `${context}.hint`) }),
+  };
+}
+
+function parseMappingCandidate(value: unknown, context: string): MappingCandidate {
+  const record = parseObject(value, ["playerId", "displayName", "score", "matchedOn"], context);
+  if (
+    typeof record.score !== "number" ||
+    !Number.isFinite(record.score) ||
+    record.score < 0 ||
+    record.score > 1
+  )
+    throw invalid(ERROR_CODES.invalidValue, `${context}.score must be between 0 and 1`, {
+      field: `${context}.score`,
+    });
+  return {
+    playerId: requiredString(record.playerId, `${context}.playerId`, 128),
+    displayName: requiredString(record.displayName, `${context}.displayName`),
+    score: record.score,
+    matchedOn: requiredString(record.matchedOn, `${context}.matchedOn`),
+  };
+}
+
+function parseMappingSuggestion(value: unknown, context: string): MappingSuggestion {
+  const record = parseObject(value, ["observed", "kind", "exact", "candidates"], context);
+  if (record.kind !== "discord" && record.kind !== "roll20")
+    throw invalid(ERROR_CODES.invalidValue, `${context}.kind is invalid`, {
+      field: `${context}.kind`,
+    });
+  if (!Array.isArray(record.candidates) || record.candidates.length > 100)
+    throw invalid(ERROR_CODES.invalidValue, `${context}.candidates must be bounded`, {
+      field: `${context}.candidates`,
+    });
+  return {
+    observed: requiredString(record.observed, `${context}.observed`),
+    kind: record.kind,
+    exact: record.exact === null ? null : requiredString(record.exact, `${context}.exact`, 128),
+    candidates: record.candidates.map((candidate, index) =>
+      parseMappingCandidate(candidate, `${context}.candidates[${String(index)}]`),
+    ),
+  };
+}
+
 function parseRunEvent(value: unknown, context: string): RunEvent {
   const record = parseObject(
     value,
@@ -674,6 +867,9 @@ function parseRunEvent(value: unknown, context: string): RunEvent {
       "durationS",
       "error",
       "level",
+      "kind",
+      "bytesCopied",
+      "totalBytes",
     ],
     context,
   );
@@ -685,6 +881,43 @@ function parseRunEvent(value: unknown, context: string): RunEvent {
     Number.MAX_SAFE_INTEGER,
   );
   const id = runId(record.runId, `${context}.runId`);
+  if (type === "copy_progress") {
+    if (record.kind !== "craig" && record.kind !== "roll20")
+      throw invalid(ERROR_CODES.invalidValue, `${context}.kind is invalid`, {
+        field: `${context}.kind`,
+      });
+    if (
+      typeof record.progress !== "number" ||
+      !Number.isFinite(record.progress) ||
+      record.progress < 0 ||
+      record.progress > 1
+    )
+      throw invalid(ERROR_CODES.invalidValue, `${context}.progress must be between 0 and 1`, {
+        field: `${context}.progress`,
+      });
+    return {
+      type,
+      sequence,
+      runId: id,
+      kind: record.kind,
+      progress: record.progress,
+      bytesCopied: requiredInteger(
+        record.bytesCopied,
+        `${context}.bytesCopied`,
+        0,
+        Number.MAX_SAFE_INTEGER,
+      ),
+      totalBytes: requiredInteger(
+        record.totalBytes,
+        `${context}.totalBytes`,
+        0,
+        Number.MAX_SAFE_INTEGER,
+      ),
+      ...(record.message === undefined
+        ? {}
+        : { message: requiredString(record.message, `${context}.message`) }),
+    };
+  }
   if (type === "stage_started")
     return {
       type,
@@ -844,6 +1077,57 @@ function parseRequestForOperation(operation: IpcOperation, value: unknown): IpcR
         date: requiredString(record.date, "date"),
       };
     }
+    case "sessionsCopy": {
+      const record = parseObject(
+        value,
+        ["sessionId", "kind", "sourcePath"],
+        "sessions.copy request",
+      );
+      if (record.kind !== "craig" && record.kind !== "roll20")
+        throw invalid(ERROR_CODES.invalidValue, "kind must be craig or roll20", { field: "kind" });
+      return {
+        sessionId: sessionId(record.sessionId),
+        kind: record.kind,
+        sourcePath: requiredString(record.sourcePath, "sourcePath", IPC_LIMITS.maxStringLength),
+      };
+    }
+    case "sessionsReveal": {
+      const record = parseObject(value, ["sessionId", "kind"], "sessions.reveal request");
+      if (record.kind !== "craig" && record.kind !== "roll20")
+        throw invalid(ERROR_CODES.invalidValue, "kind must be craig or roll20", { field: "kind" });
+      return { sessionId: sessionId(record.sessionId), kind: record.kind };
+    }
+    case "sessionsQa": {
+      const record = parseObject(value, ["sessionId"], "sessions.qa request");
+      return { sessionId: sessionId(record.sessionId) };
+    }
+    case "sessionsMapping": {
+      const record = parseObject(value, ["sessionId", "decisions"], "sessions.mapping request");
+      if (!Array.isArray(record.decisions) || record.decisions.length > 1_000)
+        throw invalid(ERROR_CODES.invalidValue, "decisions must be a bounded array", {
+          field: "decisions",
+        });
+      const decisions: SessionsMappingDecision[] = record.decisions.map((value, index) => {
+        const item = parseObject(
+          value,
+          ["observed", "kind", "playerId"],
+          `decisions[${String(index)}]`,
+        );
+        if (item.kind !== "discord" && item.kind !== "roll20")
+          throw invalid(ERROR_CODES.invalidValue, "mapping kind is invalid", {
+            field: `decisions[${String(index)}].kind`,
+          });
+        return {
+          observed: requiredString(item.observed, `decisions[${String(index)}].observed`),
+          kind: item.kind,
+          playerId:
+            item.playerId === null
+              ? null
+              : requiredString(item.playerId, `decisions[${String(index)}].playerId`, 128),
+        };
+      });
+      return { sessionId: sessionId(record.sessionId), decisions };
+    }
     case "pipelineRun": {
       const record = parseObject(value, ["sessionId", "stages", "force"], "pipeline.run request");
       let stages: string[] | undefined;
@@ -939,14 +1223,61 @@ function parseResponseForOperation(operation: IpcOperation, value: unknown): Ipc
       };
     }
     case "sessionsGet": {
-      const record = parseObject(value, ["session"], "sessions.get response");
+      const record = parseObject(value, ["session", "paths"], "sessions.get response");
       return {
         session: record.session === null ? null : parseSessionSummary(record.session, "session"),
+        ...(record.paths === undefined ? {} : { paths: parseDropPaths(record.paths, "paths") }),
       };
     }
     case "sessionsCreate": {
-      const record = parseObject(value, ["session"], "sessions.create response");
-      return { session: parseSessionSummary(record.session, "session") };
+      const record = parseObject(value, ["session", "paths"], "sessions.create response");
+      return {
+        session: parseSessionSummary(record.session, "session"),
+        ...(record.paths === undefined ? {} : { paths: parseDropPaths(record.paths, "paths") }),
+      };
+    }
+    case "sessionsCopy": {
+      const record = parseObject(value, ["copyId", "destinationName"], "sessions.copy response");
+      return {
+        copyId: runId(record.copyId, "copyId"),
+        destinationName: requiredString(record.destinationName, "destinationName"),
+      };
+    }
+    case "sessionsReveal": {
+      const record = parseObject(value, ["revealed"], "sessions.reveal response");
+      if (typeof record.revealed !== "boolean")
+        throw invalid(ERROR_CODES.invalidValue, "revealed must be a boolean");
+      return { revealed: record.revealed };
+    }
+    case "sessionsQa": {
+      const record = parseObject(
+        value,
+        ["entries", "grade", "suggestions"],
+        "sessions.qa response",
+      );
+      if (!Array.isArray(record.entries) || record.entries.length > IPC_LIMITS.maxArrayLength)
+        throw invalid(ERROR_CODES.invalidValue, "entries must be a bounded array", {
+          field: "entries",
+        });
+      if (!Array.isArray(record.suggestions) || record.suggestions.length > 1_000)
+        throw invalid(ERROR_CODES.invalidValue, "suggestions must be a bounded array", {
+          field: "suggestions",
+        });
+      return {
+        entries: record.entries.map((entry, index) =>
+          parseQaEntry(entry, `entries[${String(index)}]`),
+        ),
+        grade: record.grade === null ? null : requiredString(record.grade, "grade", 32),
+        suggestions: record.suggestions.map((suggestion, index) =>
+          parseMappingSuggestion(suggestion, `suggestions[${String(index)}]`),
+        ),
+      };
+    }
+    case "sessionsMapping": {
+      const record = parseObject(value, ["saved"], "sessions.mapping response");
+      if (typeof record.saved !== "boolean")
+        throw invalid(ERROR_CODES.invalidValue, "saved must be a boolean");
+      return { saved: record.saved };
     }
     case "pipelineRun": {
       const record = parseObject(value, ["runId"], "pipeline.run response");

@@ -340,4 +340,37 @@ describe("main IPC boundary", () => {
     );
     expect(invalid).toMatchObject({ ok: false, error: { code: "invalid_value" } });
   });
+
+  it("dispatches validated session copy requests to the handler", async () => {
+    const ipc = new FakeIpcMain();
+    registerIpcHandlers({
+      expectedSenderId: 7,
+      expectedOrigin: "dnd-auto-notes://app",
+      expectedFrameUrl: "dnd-auto-notes://app/index.html",
+      ipcMain: ipc,
+      handlers: {
+        sessionsCopy: ({ sessionId, kind, sourcePath }) => ({
+          copyId: "copy-1",
+          destinationName: `${sessionId}-${kind}-${sourcePath.split("\\").at(-1) ?? "input"}`,
+        }),
+      },
+    });
+    await expect(
+      ipc.call(
+        CHANNELS.sessions.copy,
+        trustedEvent(),
+        success({
+          sessionId: "2026-01-01-session",
+          kind: "craig",
+          sourcePath: "C:\\incoming\\track.wav",
+        }),
+      ),
+    ).resolves.toEqual({
+      ok: true,
+      value: {
+        copyId: "copy-1",
+        destinationName: "2026-01-01-session-craig-track.wav",
+      },
+    });
+  });
 });

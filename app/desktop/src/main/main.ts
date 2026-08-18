@@ -2,11 +2,18 @@ import { mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { app, BrowserWindow, session } from "electron";
+import { app, BrowserWindow, session, shell } from "electron";
 import { registerIpcHandlers, sendOutboundEvent, type IpcHandlerMap } from "./ipc.js";
+import {
+  asIpcSessionHandlers,
+  createSessionHandlers,
+  resolvePipelineSessionRoot,
+  runSessionIntake,
+  type SessionHandlers,
+} from "./handlers/sessions.js";
 import { getUiRoot, getUserDataPaths, type DesktopUserDataPaths } from "./paths.js";
 import { DesktopSidecarSupervisor, type SidecarState } from "./sidecar/index.js";
-import { structuredError, type DesktopEvent } from "../shared/contracts.js";
+import { structuredError, type DesktopEvent, type RunEvent } from "../shared/contracts.js";
 import { createUiUrl, isAllowedUiUrl, registerUiProtocol, registerUiScheme } from "./uiProtocol.js";
 
 const DEV_URL_ENV = ["DND_DEV_SERVER_URL", "VITE_DEV_SERVER_URL", "ELECTRON_RENDERER_URL"] as const;
@@ -21,6 +28,8 @@ let sidecar: DesktopSidecarSupervisor | null = null;
 let eventSequence = 0;
 let quitStopPromise: Promise<void> | null = null;
 let quitRequested = false;
+let sessionHandlers: SessionHandlers | null = null;
+let desktopPaths: DesktopUserDataPaths | null = null;
 const mainDirectory = dirname(fileURLToPath(import.meta.url));
 
 function localDevUrl(): string | null {
@@ -81,6 +90,9 @@ export function createAcceptedPipelineRunTracker(emit: (event: DesktopEvent) => 
       runs.delete(runId);
       return true;
     },
+    complete(runId: string): void {
+      runs.delete(runId);
+    },
     fail(reason: string, code: "unhealthy" | "unavailable"): void {
       const error = structuredError(code, `Pipeline run failed because the sidecar ${reason}`);
       for (const [runId, controller] of runs) {
@@ -132,8 +144,114 @@ function setupSidecar(paths: DesktopUserDataPaths): void {
   sidecar.onState(handleSidecarState, false);
 }
 
+function campaignRootForDesktop(): string {
+  return process.env["DND_CAMPAIGN_ROOT"] ?? join(desktopRepoRoot(), "campaign");
+}
+
+function setupSessionHandlers(paths: DesktopUserDataPaths): void {
+  sessionHandlers = createSessionHandlers({
+    sessionsRoot: paths.sessions,
+    databasePath: join(paths.data, "notes.db"),
+    campaignRoot: campaignRootForDesktop(),
+    emitCopyProgress: (event) => {
+      if (mainWindow !== null)
+        sendOutboundEvent(mainWindow.webContents, {
+          ...event,
+          sequence: ++eventSequence,
+        });
+    },
+    revealPath: async (path) => {
+      const failure = await shell.openPath(path);
+      if (failure !== "") throw new Error(failure);
+      return true;
+    },
+  });
+}
+
+interface PipelineRuntimeOptions {
+  readonly sessionsRoot: string;
+  readonly campaignRoot: string;
+  readonly emit?: (event: DesktopEvent) => void;
+}
+
+function runtimeEmitter(options: PipelineRuntimeOptions): (event: DesktopEvent) => void {
+  return (
+    options.emit ??
+    ((event: DesktopEvent) => {
+      if (mainWindow !== null) sendOutboundEvent(mainWindow.webContents, event);
+    })
+  );
+}
+
+type RunEventPayload = {
+  [Kind in RunEvent["type"]]: Omit<Extract<RunEvent, { type: Kind }>, "sequence">;
+}[RunEvent["type"]];
+
+function emitRunEvent(emit: (event: DesktopEvent) => void, event: RunEventPayload): void {
+  emit({ ...event, sequence: ++eventSequence } as DesktopEvent);
+}
+
+function startPipelineRun(
+  runId: string,
+  request: {
+    readonly sessionId: string;
+    readonly stages?: readonly string[];
+    readonly force?: boolean;
+  },
+  controller: AbortController,
+  options: PipelineRuntimeOptions,
+): void {
+  const emit = runtimeEmitter(options);
+  const stage = request.stages?.[0] ?? "intake";
+  void (async () => {
+    emitRunEvent(emit, {
+      type: "stage_started",
+      runId,
+      stage,
+      at: new Date().toISOString(),
+    });
+    try {
+      if (stage !== "intake" || (request.stages?.length ?? 1) !== 1) {
+        throw new Error(`stage ${stage} is not implemented yet`);
+      }
+      const sessionRoot = await resolvePipelineSessionRoot(options.sessionsRoot, request.sessionId);
+      const result = await runSessionIntake({
+        sessionRoot,
+        campaignRoot: options.campaignRoot,
+        force: request.force === true,
+        onProgress: (fraction, message) => {
+          if (controller.signal.aborted) return;
+          emitRunEvent(emit, { type: "stage_progress", runId, stage, progress: fraction, message });
+        },
+      });
+      if (controller.signal.aborted) throw new Error("pipeline run was cancelled");
+      if (result.skipped) emitRunEvent(emit, { type: "stage_skipped", runId, stage });
+      else
+        emitRunEvent(emit, {
+          type: "stage_completed",
+          runId,
+          stage,
+          durationS: Math.max(0, Math.round(result.meta.duration_s)),
+        });
+      emitRunEvent(emit, { type: "run_completed", runId });
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message !== "" ? error.message : "pipeline run failed";
+      const failure = structuredError(
+        controller.signal.aborted ? "cancelled" : "internal_error",
+        message,
+      );
+      emitRunEvent(emit, { type: "stage_failed", runId, stage, error: failure });
+      emitRunEvent(emit, { type: "run_failed", runId, error: failure });
+    } finally {
+      acceptedPipelineRuns.complete(runId);
+    }
+  })();
+}
+
 export function createSidecarHandlers(
   supervisor: Pick<DesktopSidecarSupervisor, "state" | "ensureRunning" | "getLogTail">,
+  pipelineOptions?: PipelineRuntimeOptions,
 ): IpcHandlerMap {
   return {
     sidecarStatus: () => {
@@ -156,10 +274,8 @@ export function createSidecarHandlers(
       const runId = randomUUID();
       const controller = new AbortController();
       acceptedPipelineRuns.accept(runId, controller);
-      // The pipeline itself is owned by the desktop run/session boundary.
-      // P4-02 exposes no /jobs/pipeline endpoint, so accepting the run here
-      // must not invent an HTTP call to the sidecar.
-      void request;
+      if (pipelineOptions !== undefined)
+        startPipelineRun(runId, request, controller, pipelineOptions);
       return { runId };
     },
     pipelineCancel: ({ runId }: { runId: string }) => {
@@ -169,7 +285,15 @@ export function createSidecarHandlers(
 }
 
 function sidecarHandlers(): IpcHandlerMap {
-  return sidecar === null ? {} : createSidecarHandlers(sidecar);
+  const sessions = sessionHandlers === null ? {} : asIpcSessionHandlers(sessionHandlers);
+  const pipeline =
+    sidecar === null || desktopPaths === null
+      ? {}
+      : createSidecarHandlers(sidecar, {
+          sessionsRoot: desktopPaths.sessions,
+          campaignRoot: campaignRootForDesktop(),
+        });
+  return { ...sessions, ...pipeline };
 }
 
 function installNetworkBlock(): void {
@@ -300,7 +424,9 @@ if (!hasSingleInstanceLock) {
     .whenReady()
     .then(() => {
       const paths = configureUserDataPaths();
+      desktopPaths = paths;
       setupSidecar(paths);
+      setupSessionHandlers(paths);
       installNetworkBlock();
       console.error(`[desktop] userData=${paths.userData}`);
       void createMainWindow();
@@ -326,6 +452,10 @@ if (!hasSingleInstanceLock) {
     if (quitRequested) return;
     quitRequested = true;
     event.preventDefault();
-    void stopSidecarOnce().finally(() => app.quit());
+    void stopSidecarOnce().finally(() => {
+      sessionHandlers?.dispose();
+      sessionHandlers = null;
+      app.quit();
+    });
   });
 }

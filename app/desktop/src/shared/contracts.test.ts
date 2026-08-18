@@ -150,4 +150,47 @@ describe("desktop IPC contracts", () => {
       }),
     ).toThrow();
   });
+
+  it("validates streamed copy progress and explicit mapping operations", () => {
+    expect(
+      validateRequest(CHANNELS.sessions.copy, {
+        sessionId: "2026-01-01-session",
+        kind: "craig",
+        sourcePath: "C:\\incoming\\recording.wav",
+      }),
+    ).toEqual({
+      sessionId: "2026-01-01-session",
+      kind: "craig",
+      sourcePath: "C:\\incoming\\recording.wav",
+    });
+    expect(
+      validateRequest(CHANNELS.sessions.mapping, {
+        sessionId: "2026-01-01-session",
+        decisions: [{ observed: "track-a", kind: "discord", playerId: null }],
+      }),
+    ).toEqual({
+      sessionId: "2026-01-01-session",
+      decisions: [{ observed: "track-a", kind: "discord", playerId: null }],
+    });
+    expect(
+      validateOutboundEvent({
+        type: "copy_progress",
+        sequence: 1,
+        runId: "copy-1",
+        kind: "craig",
+        progress: 0.5,
+        bytesCopied: 50,
+        totalBytes: 100,
+        sourcePath: "private-path",
+      }),
+    ).toEqual({
+      type: "copy_progress",
+      sequence: 1,
+      runId: "copy-1",
+      kind: "craig",
+      progress: 0.5,
+      bytesCopied: 50,
+      totalBytes: 100,
+    });
+  });
 });

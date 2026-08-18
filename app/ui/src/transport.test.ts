@@ -33,6 +33,22 @@ describe("renderer transport", () => {
           ok: false,
           error: { code: "unavailable", message: "not ready" },
         }),
+        copy: async () => ({
+          ok: false,
+          error: { code: "unavailable", message: "not ready" },
+        }),
+        reveal: async () => ({
+          ok: false,
+          error: { code: "unavailable", message: "not ready" },
+        }),
+        qa: async () => ({
+          ok: false,
+          error: { code: "unavailable", message: "not ready" },
+        }),
+        mapping: async () => ({
+          ok: false,
+          error: { code: "unavailable", message: "not ready" },
+        }),
       },
       pipeline: {
         run: async () => ({ ok: false, error: { code: "unavailable", message: "not ready" } }),
@@ -68,6 +84,13 @@ describe("renderer transport", () => {
       code: "unavailable",
       operation: "sessions.get",
     });
+    await expect(
+      transport.sessions.copy({
+        sessionId: "session-1",
+        kind: "craig",
+        sourcePath: "C:\\incoming\\track.wav",
+      }),
+    ).rejects.toMatchObject({ code: "unavailable", operation: "sessions.copy" });
     expect(isUnavailableOperation(new Error("no"))).toBe(false);
   });
 });

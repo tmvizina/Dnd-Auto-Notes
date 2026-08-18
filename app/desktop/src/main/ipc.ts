@@ -28,10 +28,18 @@ import {
   type RunsUnsubscribeResponse,
   type SessionsCreateRequest,
   type SessionsCreateResponse,
+  type SessionsCopyRequest,
+  type SessionsCopyResponse,
   type SessionsGetRequest,
   type SessionsGetResponse,
   type SessionsListRequest,
   type SessionsListResponse,
+  type SessionsMappingRequest,
+  type SessionsMappingResponse,
+  type SessionsQaRequest,
+  type SessionsQaResponse,
+  type SessionsRevealRequest,
+  type SessionsRevealResponse,
   type SettingsSetRequest,
   type SettingsSetResponse,
   type SettingsGetResponse,
@@ -80,6 +88,22 @@ export interface IpcHandlerMap {
     request: SessionsCreateRequest,
     context: IpcHandlerContext,
   ) => SessionsCreateResponse | Promise<SessionsCreateResponse>;
+  sessionsCopy?: (
+    request: SessionsCopyRequest,
+    context: IpcHandlerContext,
+  ) => SessionsCopyResponse | Promise<SessionsCopyResponse>;
+  sessionsReveal?: (
+    request: SessionsRevealRequest,
+    context: IpcHandlerContext,
+  ) => SessionsRevealResponse | Promise<SessionsRevealResponse>;
+  sessionsQa?: (
+    request: SessionsQaRequest,
+    context: IpcHandlerContext,
+  ) => SessionsQaResponse | Promise<SessionsQaResponse>;
+  sessionsMapping?: (
+    request: SessionsMappingRequest,
+    context: IpcHandlerContext,
+  ) => SessionsMappingResponse | Promise<SessionsMappingResponse>;
   pipelineRun?: (
     request: PipelineRunRequest,
     context: IpcHandlerContext,
@@ -249,6 +273,22 @@ async function dispatch(
       return handlers.sessionsCreate === undefined
         ? handlerUnavailable()
         : handlers.sessionsCreate(request as SessionsCreateRequest, context);
+    case "sessionsCopy":
+      return handlers.sessionsCopy === undefined
+        ? handlerUnavailable()
+        : handlers.sessionsCopy(request as SessionsCopyRequest, context);
+    case "sessionsReveal":
+      return handlers.sessionsReveal === undefined
+        ? handlerUnavailable()
+        : handlers.sessionsReveal(request as SessionsRevealRequest, context);
+    case "sessionsQa":
+      return handlers.sessionsQa === undefined
+        ? handlerUnavailable()
+        : handlers.sessionsQa(request as SessionsQaRequest, context);
+    case "sessionsMapping":
+      return handlers.sessionsMapping === undefined
+        ? handlerUnavailable()
+        : handlers.sessionsMapping(request as SessionsMappingRequest, context);
     case "pipelineRun":
       return handlers.pipelineRun === undefined
         ? handlerUnavailable()
@@ -288,6 +328,10 @@ const CHANNEL_OPERATIONS: ReadonlyArray<readonly [string, keyof IpcHandlerMap]> 
   [CHANNELS.sessions.list, "sessionsList"],
   [CHANNELS.sessions.get, "sessionsGet"],
   [CHANNELS.sessions.create, "sessionsCreate"],
+  [CHANNELS.sessions.copy, "sessionsCopy"],
+  [CHANNELS.sessions.reveal, "sessionsReveal"],
+  [CHANNELS.sessions.qa, "sessionsQa"],
+  [CHANNELS.sessions.mapping, "sessionsMapping"],
   [CHANNELS.pipeline.run, "pipelineRun"],
   [CHANNELS.pipeline.cancel, "pipelineCancel"],
   [CHANNELS.runs.subscribe, "runsSubscribe"],

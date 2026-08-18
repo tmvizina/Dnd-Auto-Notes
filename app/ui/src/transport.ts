@@ -1,6 +1,8 @@
 import type {
   DesktopEvent,
+  IntakeQaEntry,
   IpcEnvelope,
+  MappingSuggestion,
   PipelineCancelRequest,
   PipelineCancelResponse,
   PipelineRunRequest,
@@ -11,12 +13,22 @@ import type {
   RunsUnsubscribeRequest,
   RunsUnsubscribeResponse,
   SessionSummary,
+  SessionDropKind,
+  SessionDropPaths,
   SessionsCreateRequest,
   SessionsCreateResponse,
+  SessionsCopyRequest,
+  SessionsCopyResponse,
   SessionsGetRequest,
   SessionsGetResponse,
   SessionsListRequest,
   SessionsListResponse,
+  SessionsMappingRequest,
+  SessionsMappingResponse,
+  SessionsQaRequest,
+  SessionsQaResponse,
+  SessionsRevealRequest,
+  SessionsRevealResponse,
   SettingsGetResponse,
   SettingsSetRequest,
   SettingsSetResponse,
@@ -27,7 +39,16 @@ import type {
   StructuredError,
 } from "../../desktop/src/shared/contracts.js";
 
-export type { DesktopEvent, RunEvent, SessionSummary, SidecarStatusEvent };
+export type {
+  DesktopEvent,
+  IntakeQaEntry,
+  MappingSuggestion,
+  RunEvent,
+  SessionDropKind,
+  SessionDropPaths,
+  SessionSummary,
+  SidecarStatusEvent,
+};
 export type SidecarStatus = Pick<SidecarStatusEvent, "status" | "reason" | "setupCommand">;
 
 /** The operation names are part of the browser-mode error contract. */
@@ -35,6 +56,10 @@ export type TransportOperation =
   | "sessions.list"
   | "sessions.get"
   | "sessions.create"
+  | "sessions.copy"
+  | "sessions.reveal"
+  | "sessions.qa"
+  | "sessions.mapping"
   | "pipeline.run"
   | "pipeline.cancel"
   | "runs.subscribe"
@@ -56,6 +81,14 @@ export interface DesktopBridgeLike {
     readonly create: (
       request: SessionsCreateRequest,
     ) => Promise<IpcEnvelope<SessionsCreateResponse>>;
+    readonly copy: (request: SessionsCopyRequest) => Promise<IpcEnvelope<SessionsCopyResponse>>;
+    readonly reveal: (
+      request: SessionsRevealRequest,
+    ) => Promise<IpcEnvelope<SessionsRevealResponse>>;
+    readonly qa: (request: SessionsQaRequest) => Promise<IpcEnvelope<SessionsQaResponse>>;
+    readonly mapping: (
+      request: SessionsMappingRequest,
+    ) => Promise<IpcEnvelope<SessionsMappingResponse>>;
   };
   readonly pipeline: {
     readonly run: (request: PipelineRunRequest) => Promise<IpcEnvelope<PipelineRunResponse>>;
@@ -88,6 +121,10 @@ export interface RendererTransport {
     readonly list: (request?: SessionsListRequest) => Promise<SessionsListResponse>;
     readonly get: (request: SessionsGetRequest) => Promise<SessionsGetResponse>;
     readonly create: (request: SessionsCreateRequest) => Promise<SessionsCreateResponse>;
+    readonly copy: (request: SessionsCopyRequest) => Promise<SessionsCopyResponse>;
+    readonly reveal: (request: SessionsRevealRequest) => Promise<SessionsRevealResponse>;
+    readonly qa: (request: SessionsQaRequest) => Promise<SessionsQaResponse>;
+    readonly mapping: (request: SessionsMappingRequest) => Promise<SessionsMappingResponse>;
   };
   readonly pipeline: {
     readonly run: (request: PipelineRunRequest) => Promise<PipelineRunResponse>;
@@ -163,6 +200,10 @@ export function isDesktopBridge(value: unknown): value is DesktopBridgeLike {
     isFunction(sessions["list"]) &&
     isFunction(sessions["get"]) &&
     isFunction(sessions["create"]) &&
+    isFunction(sessions["copy"]) &&
+    isFunction(sessions["reveal"]) &&
+    isFunction(sessions["qa"]) &&
+    isFunction(sessions["mapping"]) &&
     isFunction(pipeline["run"]) &&
     isFunction(pipeline["cancel"]) &&
     isFunction(runs["subscribe"]) &&
@@ -197,6 +238,10 @@ function electronTransport(bridge: DesktopBridgeLike): RendererTransport {
       list: (request = {}) => unwrap("sessions.list", () => bridge.sessions.list(request)),
       get: (request) => unwrap("sessions.get", () => bridge.sessions.get(request)),
       create: (request) => unwrap("sessions.create", () => bridge.sessions.create(request)),
+      copy: (request) => unwrap("sessions.copy", () => bridge.sessions.copy(request)),
+      reveal: (request) => unwrap("sessions.reveal", () => bridge.sessions.reveal(request)),
+      qa: (request) => unwrap("sessions.qa", () => bridge.sessions.qa(request)),
+      mapping: (request) => unwrap("sessions.mapping", () => bridge.sessions.mapping(request)),
     },
     pipeline: {
       run: (request) => unwrap("pipeline.run", () => bridge.pipeline.run(request)),
@@ -228,6 +273,10 @@ function unavailableTransport(): RendererTransport {
   const list = unavailableCall<SessionsListResponse>("sessions.list");
   const get = unavailableCall<SessionsGetResponse>("sessions.get");
   const create = unavailableCall<SessionsCreateResponse>("sessions.create");
+  const copy = unavailableCall<SessionsCopyResponse>("sessions.copy");
+  const reveal = unavailableCall<SessionsRevealResponse>("sessions.reveal");
+  const qa = unavailableCall<SessionsQaResponse>("sessions.qa");
+  const mapping = unavailableCall<SessionsMappingResponse>("sessions.mapping");
   const run = unavailableCall<PipelineRunResponse>("pipeline.run");
   const cancel = unavailableCall<PipelineCancelResponse>("pipeline.cancel");
   const subscribe = unavailableCall<RunsSubscribeResponse>("runs.subscribe");
@@ -238,7 +287,7 @@ function unavailableTransport(): RendererTransport {
   const sidecarLogs = unavailableCall<SidecarLogsResponse>("sidecar.logs");
   return {
     kind: "browser",
-    sessions: { list, get, create },
+    sessions: { list, get, create, copy, reveal, qa, mapping },
     pipeline: { run, cancel },
     runs: {
       subscribe,

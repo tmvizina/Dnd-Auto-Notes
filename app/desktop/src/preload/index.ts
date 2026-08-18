@@ -23,10 +23,18 @@ import {
   type RunsUnsubscribeResponse,
   type SessionsCreateRequest,
   type SessionsCreateResponse,
+  type SessionsCopyRequest,
+  type SessionsCopyResponse,
   type SessionsGetRequest,
   type SessionsGetResponse,
   type SessionsListRequest,
   type SessionsListResponse,
+  type SessionsMappingRequest,
+  type SessionsMappingResponse,
+  type SessionsQaRequest,
+  type SessionsQaResponse,
+  type SessionsRevealRequest,
+  type SessionsRevealResponse,
   type SettingsSetRequest,
   type SettingsSetResponse,
   type SettingsGetResponse,
@@ -53,6 +61,14 @@ export interface DesktopBridge {
     readonly create: (
       request: SessionsCreateRequest,
     ) => Promise<IpcEnvelope<SessionsCreateResponse>>;
+    readonly copy: (request: SessionsCopyRequest) => Promise<IpcEnvelope<SessionsCopyResponse>>;
+    readonly reveal: (
+      request: SessionsRevealRequest,
+    ) => Promise<IpcEnvelope<SessionsRevealResponse>>;
+    readonly qa: (request: SessionsQaRequest) => Promise<IpcEnvelope<SessionsQaResponse>>;
+    readonly mapping: (
+      request: SessionsMappingRequest,
+    ) => Promise<IpcEnvelope<SessionsMappingResponse>>;
   };
   readonly pipeline: {
     readonly run: (request: PipelineRunRequest) => Promise<IpcEnvelope<PipelineRunResponse>>;
@@ -140,6 +156,26 @@ export function buildBridge(renderer: IpcRendererLike): DesktopBridge {
         invoke<SessionsCreateRequest, SessionsCreateResponse>(
           renderer,
           CHANNELS.sessions.create,
+          request,
+        ),
+      copy: (request) =>
+        invoke<SessionsCopyRequest, SessionsCopyResponse>(
+          renderer,
+          CHANNELS.sessions.copy,
+          request,
+        ),
+      reveal: (request) =>
+        invoke<SessionsRevealRequest, SessionsRevealResponse>(
+          renderer,
+          CHANNELS.sessions.reveal,
+          request,
+        ),
+      qa: (request) =>
+        invoke<SessionsQaRequest, SessionsQaResponse>(renderer, CHANNELS.sessions.qa, request),
+      mapping: (request) =>
+        invoke<SessionsMappingRequest, SessionsMappingResponse>(
+          renderer,
+          CHANNELS.sessions.mapping,
           request,
         ),
     },
