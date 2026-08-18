@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "classes": {
+    "dice_mechanics": {
+      "weight": 1,
+      "terms": [
+        "d20",
+        "natural twenty",
+        "advantage",
+        "disadvantage",
+        "initiative",
+        "AC",
+        "armor class",
+        "hit points",
+        "saving throw",
+        "crit",
+        "critical hit",
+        "modifier"
+      ]
+    },
+    "table_procedure": {
+      "weight": 0.9,
+      "terms": [
+        "my turn",
+        "whose turn",
+        "can I",
+        "does that hit",
+        "roll for",
+        "I'll go",
+        "end my turn"
+      ]
+    },
+    "meta_reference": {
+      "weight": 0.8,
+      "terms": ["the DM", "the module", "last session", "rules as written"]
+    },
+    "room": {
+      "weight": 0.75,
+      "terms": ["pizza", "back in a sec", "sorry, mic", "sorry, microphone"]
+    },
+    "register": {
+      "weight": 0.2,
+      "terms": ["aye", "thee", "thou", "milord", "milady"]
+    }
+  }
+}
