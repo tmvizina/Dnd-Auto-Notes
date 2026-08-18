@@ -10,6 +10,7 @@ scope:
   - sidecar/dnd_sidecar/server.py
   - sidecar/tests/test_features.py
   - packages/core/src/stages/features.ts
+  - packages/core/src/stages/features.test.ts
 estimate: M
 commit: ""
 ---
