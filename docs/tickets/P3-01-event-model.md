@@ -2,8 +2,8 @@
 id: P3-01
 phase: 3
 title: Event model and timeline assembly
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p3-01"
 depends_on: [P2-07, P2-09]
 scope:
   - packages/core/src/outline/events.ts
