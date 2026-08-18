@@ -19,6 +19,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from . import __version__, capabilities, logging_setup
+from . import asr as asr_module
 from . import probe as probe_module
 from . import vad as vad_module
 from .jobs import GPU_GATE, ProgressFn, cancel_job, create_job, get_job, list_jobs
@@ -85,6 +86,42 @@ def start_vad(request: VADRequest) -> dict[str, str]:
         return vad_module.run_vad(request.track_path, request.params, progress)
 
     return {"job_id": create_job("vad", run)}
+
+
+class TranscribeSegment(BaseModel):
+    """One VAD window accepted by the asynchronous transcription route."""
+
+    start_s: float = Field(ge=0)
+    end_s: float = Field(gt=0)
+
+
+class TranscribeRequest(BaseModel):
+    """Input for one track's model-backed transcription job."""
+
+    track_path: str = Field(min_length=1)
+    segments: list[TranscribeSegment] = Field(default_factory=list)
+    backend: str = "auto"
+    model: str | None = None
+    params: dict[str, object] = Field(default_factory=dict)
+
+
+@app.post("/transcribe")
+def start_transcription(request: TranscribeRequest) -> dict[str, str]:
+    """Queue transcription behind the exclusive model gate."""
+
+    windows = [segment.model_dump() for segment in request.segments]
+
+    def run(progress: ProgressFn) -> dict[str, object]:
+        return asr_module.run_transcription(
+            request.track_path,
+            windows,
+            request.backend,
+            request.model,
+            request.params,
+            progress,
+        )
+
+    return {"job_id": create_job("transcribe", run)}
 
 
 class EchoRequest(BaseModel):
