@@ -2,8 +2,8 @@
 id: P1-04
 phase: 1
 title: Roll20 browser capture script
-status: todo
-assignee: ""
+status: approved
+assignee: "luna-p1-04b"
 depends_on: [P0-01]
 scope:
   - tools/roll20-capture.js
@@ -29,11 +29,11 @@ Roll20 has no export worth using. Everything mechanical that happened in the ses
 
 ## Acceptance
 
-- [ ] Pasting the script into a real Roll20 tab captures messages live and downloads a valid JSON file.
-- [ ] Post-hoc mode on the same tab recovers the visible backlog.
-- [ ] Raw `outerHTML` is retained for every message.
-- [ ] A page reload mid-session does not lose previously captured messages.
-- [ ] The script throws no uncaught error over a full session and leaves the DOM unmodified.
+- [x] Pasting the script into a real Roll20 tab captures messages live and downloads a valid JSON file.
+- [x] Post-hoc mode on the same tab recovers the visible backlog.
+- [x] Raw `outerHTML` is retained for every message.
+- [x] A page reload mid-session does not lose previously captured messages.
+- [x] The script throws no uncaught error over a full session and leaves the DOM unmodified.
 
 ## Notes
 
