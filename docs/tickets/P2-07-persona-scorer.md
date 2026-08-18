@@ -7,6 +7,7 @@ assignee: "luna-p2-07"
 depends_on: [P2-05, P2-06, P2-09]
 scope:
   - packages/core/src/persona/scorer.ts
+  - packages/core/src/persona/scorer.config.json
   - packages/core/src/stages/persona.ts
   - packages/core/src/persona/scorer.test.ts
 estimate: L
