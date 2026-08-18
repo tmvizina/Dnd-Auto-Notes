@@ -2,8 +2,8 @@
 id: P2-07
 phase: 2
 title: Persona scorer and flagging
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p2-07"
 depends_on: [P2-05, P2-06, P2-09]
 scope:
   - packages/core/src/persona/scorer.ts
