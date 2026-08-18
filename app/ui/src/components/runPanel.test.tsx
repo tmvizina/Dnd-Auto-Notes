@@ -2,12 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { RunEvent, RunsSubscribeResponse } from "../../../desktop/src/shared/contracts.js";
 import type { RendererTransport } from "../transport.js";
-import {
-  RunPanel,
-  deriveRunPanelModel,
-  hasRunEventGap,
-  mergeRunEvent,
-} from "./RunPanel.js";
+import { RunPanel, deriveRunPanelModel, hasRunEventGap, mergeRunEvent } from "./RunPanel.js";
 
 const transport: Pick<RendererTransport, "pipeline" | "runs"> = {
   pipeline: {
