@@ -2,15 +2,19 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
 import { isAbsolute, join, resolve } from "node:path";
 import {
+  buildIntakeQaReport,
   StageMeta,
   createSession,
   planStages,
+  qaExitCode,
   readArtifact,
+  readIntakeQaReport,
+  renderQaTable,
   resolveSession,
   runIntakeStage,
   stageNames,
 } from "@dnd/core";
-import type { Manifest, Session, StageResult } from "@dnd/core";
+import type { QaReport, Session, StageResult } from "@dnd/core";
 import { formatConfig, resolveConfig } from "./config.js";
 import { PLANNED_COMMANDS, USAGE } from "./usage.js";
 
@@ -172,34 +176,35 @@ export function formatProgress(event: ProgressEvent): string {
   return `${event.stage}: ${String(percent)}% ${event.message}`;
 }
 
-async function readManifestForQa(session: Session): Promise<Manifest> {
-  return readArtifact(session, "manifest");
-}
-
-function qaExit(manifest: Manifest): 0 | 2 {
-  return manifest.qa.some((entry) => entry.severity === "error") ? 2 : 0;
-}
-
-function plainQa(session: Session, manifest: Manifest): string {
-  const lines = [`QA for ${session.descriptor.id}`];
-  if (manifest.qa.length === 0) {
-    lines.push("  no entries");
-  } else {
-    for (const entry of manifest.qa) {
-      const subject = entry.subject === undefined ? "" : ` [${entry.subject}]`;
-      lines.push(`  ${entry.severity.toUpperCase()} ${entry.code}${subject}: ${entry.message}`);
-    }
+async function readQaForSession(session: Session): Promise<QaReport> {
+  try {
+    return await readIntakeQaReport(session);
+  } catch {
+    // A session created by an older build may have a manifest but no separate
+    // QA artifact. Reconstructing it keeps `pipeline qa` useful and does not
+    // invent active-session membership.
+    const manifest = await readArtifact(session, "manifest");
+    return buildIntakeQaReport({ manifest });
   }
-  return `${lines.join("\n")}\n`;
 }
 
-function jsonQa(session: Session, manifest: Manifest): string {
+function qaExit(report: QaReport): 0 | 2 {
+  return qaExitCode(report);
+}
+
+function plainQa(session: Session, report: QaReport): string {
+  return `QA for ${session.descriptor.id}\n${renderQaTable(report)}`;
+}
+
+function jsonQa(session: Session, report: QaReport): string {
   return `${JSON.stringify({
     event: "qa",
     terminal: true,
     session_id: session.descriptor.id,
-    entries: manifest.qa,
-    exit_code: qaExit(manifest),
+    stage: report.stage,
+    entries: report.entries,
+    metrics: report.metrics,
+    exit_code: qaExit(report),
   })}\n`;
 }
 
@@ -231,7 +236,7 @@ async function runPipeline(parsed: ParsedArgs, cwd: string, options: RunOptions)
 
   const events: Record<string, unknown>[] = [];
   const plain: string[] = [];
-  let manifest: Manifest | undefined;
+  let report: QaReport | undefined;
   let currentStage = "intake";
   try {
     for (const definition of plan) {
@@ -242,6 +247,7 @@ async function runPipeline(parsed: ParsedArgs, cwd: string, options: RunOptions)
       const result = await runIntakeStage({
         session,
         campaignRoot: campaignRootFor(session, config.campaignRoot.value),
+        databasePath: config.databasePath.value,
         force: has(parsed, "force"),
         onProgress: (fraction, message) => {
           const event = progressEvent(definition.name, fraction, message);
@@ -257,8 +263,7 @@ async function runPipeline(parsed: ParsedArgs, cwd: string, options: RunOptions)
       plain.push(
         `${result.stage}: ${result.skipped ? "skipped" : result.meta.status} (${stageDuration(result)})`,
       );
-      if (!result.skipped) manifest = result.value;
-      else manifest = await readManifestForQa(session);
+      report = await readQaForSession(session);
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -280,7 +285,7 @@ async function runPipeline(parsed: ParsedArgs, cwd: string, options: RunOptions)
     return { stdout: `${plain.join("\n")}\n`, exitCode: 1 };
   }
 
-  const qaCode = manifest === undefined ? 0 : qaExit(manifest);
+  const qaCode = report === undefined ? 0 : qaExit(report);
   if (json) {
     events.push({
       event: "run",
@@ -288,19 +293,15 @@ async function runPipeline(parsed: ParsedArgs, cwd: string, options: RunOptions)
       status: qaCode === 0 ? "ok" : "qa_error",
       exit_code: qaCode,
       session_id: session.descriptor.id,
-      qa_errors: manifest?.qa.filter((entry) => entry.severity === "error").length ?? 0,
-      qa: manifest?.qa ?? [],
+      qa_errors: report?.entries.filter((entry) => entry.severity === "error").length ?? 0,
+      qa: report?.entries ?? [],
     });
     return {
       stdout: `${events.map((event) => JSON.stringify(event)).join("\n")}\n`,
       exitCode: qaCode,
     };
   }
-  if (manifest !== undefined) {
-    for (const entry of manifest.qa) {
-      plain.push(`qa: ${entry.severity.toUpperCase()} ${entry.code} - ${entry.message}`);
-    }
-  }
+  if (report !== undefined) plain.push(renderQaTable(report).trimEnd());
   plain.push(qaCode === 0 ? "run: completed" : "run: completed with QA errors");
   return { stdout: `${plain.join("\n")}\n`, exitCode: qaCode };
 }
@@ -386,12 +387,12 @@ async function qa(parsed: ParsedArgs, cwd: string): Promise<Outcome> {
   const resolved = await resolveRequestedSession(parsed, cwd, has(parsed, "json"));
   if ("exitCode" in resolved) return resolved;
   try {
-    const manifest = await readManifestForQa(resolved.session);
-    const exitCode = qaExit(manifest);
+    const report = await readQaForSession(resolved.session);
+    const exitCode = qaExit(report);
     return {
       stdout: has(parsed, "json")
-        ? jsonQa(resolved.session, manifest)
-        : plainQa(resolved.session, manifest),
+        ? jsonQa(resolved.session, report)
+        : plainQa(resolved.session, report),
       exitCode,
     };
   } catch (error) {

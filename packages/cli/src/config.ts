@@ -1,4 +1,4 @@
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { findRepoRoot } from "@dnd/core";
 
 export const DEFAULT_SIDECAR_PORT = 8477;
@@ -16,6 +16,8 @@ export interface ResolvedConfig {
   readonly repoRoot: string | null;
   readonly cwd: string;
   readonly sessionsRoot: ResolvedValue<string>;
+  /** SQLite index, beside the configured sessions root like the desktop app. */
+  readonly databasePath: ResolvedValue<string>;
   readonly campaignRoot: ResolvedValue<string>;
   readonly sidecarPort: ResolvedValue<number>;
   readonly nodeVersion: string;
@@ -54,10 +56,16 @@ function resolvePort(): ResolvedValue<number> {
 export function resolveConfig(cwd: string = process.cwd()): ResolvedConfig {
   const repoRoot = findRepoRoot(cwd);
   const base = repoRoot ?? cwd;
+  const sessionsRoot = resolvePath("DND_SESSIONS_ROOT", base, "sessions");
   return {
     repoRoot,
     cwd,
-    sessionsRoot: resolvePath("DND_SESSIONS_ROOT", base, "sessions"),
+    sessionsRoot,
+    databasePath: resolvePath(
+      "DND_DATABASE_PATH",
+      dirname(sessionsRoot.value),
+      join("data", "notes.db"),
+    ),
     campaignRoot: resolvePath("DND_CAMPAIGN_ROOT", base, "campaign"),
     sidecarPort: resolvePort(),
     nodeVersion: process.versions.node,
@@ -70,6 +78,7 @@ export function formatConfig(config: ResolvedConfig): string {
     `repo root     ${config.repoRoot ?? "(not inside a checkout)"}`,
     `working dir   ${config.cwd}`,
     `sessions      ${config.sessionsRoot.value}${mark(config.sessionsRoot)}`,
+    `database      ${config.databasePath.value}${mark(config.databasePath)}`,
     `campaign      ${config.campaignRoot.value}${mark(config.campaignRoot)}`,
     `sidecar port  ${String(config.sidecarPort.value)}${mark(config.sidecarPort)}`,
     `node          v${config.nodeVersion}`,

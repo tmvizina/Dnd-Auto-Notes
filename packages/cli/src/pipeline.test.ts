@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { closeDb, listFlags, openDb, readIntakeQaReport, resolveSession } from "@dnd/core";
 import { formatProgress, run } from "./cli.js";
 import type { ProgressEvent } from "./cli.js";
 
@@ -9,6 +10,7 @@ const generator = join(process.cwd(), "tools", "generate-fixture.mjs");
 let root: string;
 let clean: string;
 let defects: string;
+let previousDatabasePath: string | undefined;
 
 function generate(out: string, ...extra: string[]): void {
   execFileSync(process.execPath, [generator, "--out", out, ...extra], { stdio: "pipe" });
@@ -26,12 +28,16 @@ beforeAll(() => {
   root = mkdtempSync(join(process.cwd(), ".p1-09-cli-"));
   clean = join(root, "clean");
   defects = join(root, "defects");
+  previousDatabasePath = process.env["DND_DATABASE_PATH"];
+  process.env["DND_DATABASE_PATH"] = join(root, "data", "notes.db");
   generate(clean);
   generate(defects, "--with-defects");
 }, 60_000);
 
 afterAll(() => {
   if (root !== undefined) rmSync(root, { recursive: true, force: true });
+  if (previousDatabasePath === undefined) delete process.env["DND_DATABASE_PATH"];
+  else process.env["DND_DATABASE_PATH"] = previousDatabasePath;
 });
 
 describe("pipeline intake CLI", () => {
@@ -96,6 +102,23 @@ describe("pipeline intake CLI", () => {
     expect(events(outcome.stdout).filter((event) => event["terminal"] === true)).toHaveLength(1);
   });
 
+  it("writes the QA artifact and mirrors defect entries into the Node-owned DB", async () => {
+    const outcome = await run(["run", "--session", defects, "--stage", "intake", "--json"]);
+    expect(outcome.exitCode).toBe(2);
+    const session = await resolveSession(root, "defects");
+    if (session === null) throw new Error("fixture session missing");
+    const report = await readIntakeQaReport(session);
+    const db = openDb(join(root, "data", "notes.db"));
+    try {
+      const flags = listFlags(db, session.descriptor.id, { status: "open" });
+      expect(flags.map((flag) => flag.code).sort()).toEqual(
+        report.entries.map((entry) => entry.code).sort(),
+      );
+    } finally {
+      closeDb(db);
+    }
+  });
+
   it("reports status and QA through both output modes", async () => {
     await run(["run", "--session", clean, "--stage", "intake"]);
 
@@ -112,11 +135,12 @@ describe("pipeline intake CLI", () => {
     const qaText = await run(["qa", "--session", clean]);
     expect(qaText.exitCode).toBe(0);
     expect(qaText.stdout).toContain("QA for");
+    expect(qaText.stdout).toContain("| severity");
 
     const qaJson = await run(["qa", "--session", clean, "--json"]);
     expect(qaJson.exitCode).toBe(0);
     expect(events(qaJson.stdout)).toEqual([
-      expect.objectContaining({ event: "qa", terminal: true, exit_code: 0 }),
+      expect.objectContaining({ event: "qa", terminal: true, exit_code: 0, entries: [] }),
     ]);
   });
 

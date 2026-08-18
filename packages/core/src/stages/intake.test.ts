@@ -1,13 +1,24 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { Manifest, readArtifact, resolveSession, runIntakeStage } from "../index.js";
+import {
+  closeDb,
+  Manifest,
+  openDb,
+  QaReport,
+  readArtifact,
+  readIntakeQaReport,
+  resolveSession,
+  runIntakeStage,
+} from "../index.js";
+import { listFlags } from "../db/records.js";
 
 const generator = join(process.cwd(), "tools", "generate-fixture.mjs");
 let root: string;
 let clean: string;
 let defects: string;
+let unparsed: string;
 
 function generate(out: string, ...extra: string[]): void {
   execFileSync(process.execPath, [generator, "--out", out, ...extra], { stdio: "pipe" });
@@ -23,8 +34,23 @@ beforeAll(() => {
   root = mkdtempSync(join(process.cwd(), ".p1-09-stage-"));
   clean = join(root, "clean");
   defects = join(root, "defects");
+  unparsed = join(root, "unparsed");
   generate(clean);
   generate(defects, "--with-defects");
+  generate(unparsed);
+  const capturePath = join(unparsed, "input", "roll20", "roll20-capture.json");
+  const capture = JSON.parse(readFileSync(capturePath, "utf8")) as {
+    messages: Array<Record<string, unknown>>;
+  };
+  capture.messages.push({
+    id: "unparsed-message",
+    seq: 999,
+    t_wall_ms: Date.UTC(2026, 7, 16, 23, 5, 10),
+    kind: "future-message-kind",
+    text: "unparsed fixture sample",
+    outer_html: '<div class="message future">unparsed fixture sample</div>',
+  });
+  writeFileSync(capturePath, `${JSON.stringify(capture, null, 2)}\n`, "utf8");
 }, 60_000);
 
 afterAll(() => {
@@ -74,6 +100,20 @@ describe("public intake stage", () => {
     );
   });
 
+  it("retains a deterministic raw reference and sample for an unparsed message", async () => {
+    const session = await fixtureSession(unparsed);
+    await runIntakeStage({ session, force: true });
+    const manifest = await readArtifact(session, "manifest");
+    const entry = manifest.qa.find((item) => item.code === "ROLL20_UNPARSED_MESSAGES");
+
+    expect(entry).toEqual(
+      expect.objectContaining({
+        severity: "warning",
+        message: expect.stringContaining("sample unparsed-message: unparsed fixture sample"),
+      }),
+    );
+  });
+
   it("keeps roll ids and source evidence byte-stable on a forced rerun", async () => {
     const session = await fixtureSession(clean);
     const before = readFileSync(session.paths.artifact("manifest"), "utf8");
@@ -83,5 +123,58 @@ describe("public intake stage", () => {
     const afterRolls = (JSON.parse(after) as { rolls: unknown[] }).rolls;
 
     expect(afterRolls).toEqual(beforeRolls);
+  });
+
+  it("writes a validated QA artifact and keeps manifest.qa identical", async () => {
+    const session = await fixtureSession(clean);
+    await runIntakeStage({ session, force: true });
+    const manifest = await readArtifact(session, "manifest");
+    const report = await readIntakeQaReport(session);
+
+    expect(QaReport.safeParse(report).success).toBe(true);
+    expect(report.stage).toBe("intake");
+    expect(report.entries).toEqual([]);
+    expect(manifest.qa).toEqual(report.entries);
+  });
+
+  it("reruns when QA is missing or invalid, then skips with a valid artifact", async () => {
+    const session = await fixtureSession(clean);
+    await runIntakeStage({ session, force: true });
+
+    rmSync(session.paths.artifact("intakeQa"));
+    const afterMissing = await runIntakeStage({ session });
+    expect(afterMissing.skipped).toBe(false);
+    expect(QaReport.safeParse(await readIntakeQaReport(session)).success).toBe(true);
+
+    writeFileSync(session.paths.artifact("intakeQa"), "{}\n", "utf8");
+    const afterInvalid = await runIntakeStage({ session });
+    expect(afterInvalid.skipped).toBe(false);
+    expect(QaReport.safeParse(await readIntakeQaReport(session)).success).toBe(true);
+
+    const afterValid = await runIntakeStage({ session });
+    expect(afterValid.skipped).toBe(true);
+  });
+
+  it("mirrors exactly the three defect entries into the open flags", async () => {
+    const session = await fixtureSession(defects);
+    const databasePath = join(root, "data", "notes.db");
+    await runIntakeStage({ session, databasePath, force: true });
+    const report = await readIntakeQaReport(session);
+    expect(report.entries.map((entry) => entry.code).sort()).toEqual([
+      "ROLL20_ACCOUNT_UNMAPPED",
+      "TRACK_DURATION_MISMATCH",
+      "TRACK_SILENT",
+    ]);
+
+    const db = openDb(databasePath);
+    try {
+      const flags = listFlags(db, session.descriptor.id, { status: "open" });
+      expect(flags).toHaveLength(3);
+      expect(flags.map((flag) => flag.code).sort()).toEqual(
+        report.entries.map((entry) => entry.code).sort(),
+      );
+    } finally {
+      closeDb(db);
+    }
   });
 });

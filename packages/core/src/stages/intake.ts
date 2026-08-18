@@ -5,6 +5,16 @@ import type { Registry } from "../campaign/registry.js";
 import { byRoll20Account, loadRegistry } from "../campaign/registry.js";
 import type { QaEntry } from "../contracts/common.js";
 import type { Manifest, ManifestRoll } from "../contracts/manifest.js";
+import {
+  buildIntakeQaReport,
+  mirrorQaFlags,
+  readIntakeQaReport,
+  writeIntakeQaReport,
+} from "../qa/index.js";
+import type { QaReport } from "../contracts/qa.js";
+import { closeDb, openDb } from "../db/db.js";
+import type { Db } from "../db/db.js";
+import { upsertSession } from "../db/records.js";
 import { writeArtifact } from "../session/session.js";
 import type { Session } from "../session/session.js";
 import type { FileIo } from "../session/io.js";
@@ -18,7 +28,7 @@ import type { Roll20ParseResult } from "../intake/roll20/parser.js";
 import type { RollData } from "../intake/roll20/parser.js";
 
 /** The manifest shape produced by the first pipeline stage. */
-export const INTAKE_STAGE_VERSION = 2;
+export const INTAKE_STAGE_VERSION = 3;
 
 export interface IntakeStageOptions {
   readonly session: Session;
@@ -26,6 +36,12 @@ export interface IntakeStageOptions {
   readonly campaignRoot?: string;
   readonly prober?: TrackProber;
   readonly alignmentToleranceS?: number;
+  /** Optional explicit roster; absent means PLAYER_NO_TRACK is not guessed. */
+  readonly activePlayerIds?: readonly string[];
+  /** An already-open Node-owned index connection, useful to desktop callers. */
+  readonly db?: Db;
+  /** Opens this path when `db` is not injected; closed before the stage returns. */
+  readonly databasePath?: string;
   readonly force?: boolean;
   readonly onProgress?: ProgressFn;
   readonly io?: FileIo;
@@ -145,13 +161,26 @@ function parserQa(
   entries: Roll20ParseResult["qa"]["entries"],
   path: string,
   sessionRoot: string,
+  messages: Roll20ParseResult["messages"],
 ): QaEntry[] {
-  return entries.map((entry) => ({
-    code: "ROLL20_UNPARSED_MESSAGES",
-    severity: "warning",
-    message: entry.message,
-    hint: `inspect ${slashRelative(sessionRoot, path)} and preserve the raw message for a parser update`,
-  }));
+  const samples = messages
+    .filter((message) => message.kind === "other")
+    .map((message) => {
+      const raw = (message.raw_text || message.raw || message.text)
+        .replace(/[\r\n\t]+/gu, " ")
+        .trim();
+      const preview = raw === "" ? "(empty raw sample)" : raw.slice(0, 240);
+      return `${message.raw_ref}: ${preview}`;
+    });
+  return entries.map((entry, index) => {
+    const sample = samples[index] ?? samples[0] ?? "(raw reference unavailable)";
+    return {
+      code: "ROLL20_UNPARSED_MESSAGES",
+      severity: "warning",
+      message: `${entry.message}; sample ${sample}`,
+      hint: `inspect ${slashRelative(sessionRoot, path)} and preserve the raw message for a parser update`,
+    };
+  });
 }
 
 function pipelineRollId(index: number): ManifestRoll["id"] {
@@ -220,6 +249,28 @@ function qaForMissingRoll20(path: string): QaEntry {
   };
 }
 
+async function hasValidIntakeQa(session: Session): Promise<boolean> {
+  try {
+    await readIntakeQaReport(session);
+    return true;
+  } catch {
+    // A missing, malformed, or contract-invalid QA artifact must not allow
+    // the manifest-only stage metadata to advertise a reusable intake.
+    return false;
+  }
+}
+
+function mirrorIntakeQa(db: Db, session: Session, report: QaReport): void {
+  upsertSession(db, {
+    session_id: session.descriptor.id,
+    title: session.descriptor.title,
+    number: session.descriptor.number,
+    date: session.descriptor.date,
+    root_path: session.paths.root,
+  });
+  mirrorQaFlags(db, session.descriptor.id, report, "intake");
+}
+
 /**
  * Run the intake stage and atomically write `work/01-intake/manifest.json`.
  * The callback owns all domain work; `runStage` owns skip/re-run metadata and
@@ -229,79 +280,105 @@ export async function runIntakeStage(options: IntakeStageOptions): Promise<Intak
   const { session } = options;
   const campaignRoot = options.campaignRoot ?? join(session.paths.root, "campaign");
   const inputs = await stageInputs(session, campaignRoot);
+  const qaReusable = await hasValidIntakeQa(session);
+  const force = options.force === true || !qaReusable;
 
-  return runStage(
-    {
-      session,
-      stage: "intake",
-      version: INTAKE_STAGE_VERSION,
-      output: "manifest",
-      inputs: inputs.paths,
-      params: {
-        alignment_tolerance_s: options.alignmentToleranceS ?? 2,
-        prober: options.prober === undefined ? "default" : "custom",
-        source_signature: inputs.signature,
+  const db =
+    options.db ?? (options.databasePath === undefined ? null : openDb(options.databasePath));
+  try {
+    const result = await runStage(
+      {
+        session,
+        stage: "intake",
+        version: INTAKE_STAGE_VERSION,
+        output: "manifest",
+        inputs: inputs.paths,
+        params: {
+          alignment_tolerance_s: options.alignmentToleranceS ?? 2,
+          prober: options.prober === undefined ? "default" : "custom",
+          source_signature: inputs.signature,
+          active_player_ids: options.activePlayerIds ?? null,
+        },
+        force,
+        ...(options.onProgress === undefined ? {} : { onProgress: options.onProgress }),
+        ...(options.io === undefined ? {} : { io: options.io }),
       },
-      ...(options.force === undefined ? {} : { force: options.force }),
-      ...(options.onProgress === undefined ? {} : { onProgress: options.onProgress }),
-      ...(options.io === undefined ? {} : { io: options.io }),
-    },
-    async ({ progress }) => {
-      progress(0.05, "loading campaign registry");
-      const registry = await loadRegistry(campaignRoot);
-      progress(0.2, "measuring Craig tracks");
-      const craig = await craigIntake({
-        sessionRoot: session.paths.root,
-        registry,
-        ...(options.prober === undefined ? {} : { prober: options.prober }),
-        ...(options.alignmentToleranceS === undefined
-          ? {}
-          : { alignmentToleranceS: options.alignmentToleranceS }),
-      });
-
-      const qa: QaEntry[] = [...craig.qa];
-      let rolls: ManifestRoll[] = [];
-      const roll20 = await findRoll20Input(session.paths.root);
-      let roll20Source: Manifest["roll20"] = null;
-      if (roll20 === null) {
-        qa.push(qaForMissingRoll20(join(session.paths.root, "input", "roll20")));
-      } else {
-        progress(0.65, "parsing Roll20 capture");
-        const parsed = parseRoll20(roll20.raw);
-        const timing = resolveRoll20Time(parsed.normalized, {
-          started_at: craig.recording.started_at,
-          duration_s: craig.recording.duration_s,
+      async ({ progress }) => {
+        progress(0.05, "loading campaign registry");
+        const registry = await loadRegistry(campaignRoot);
+        progress(0.2, "measuring Craig tracks");
+        const craig = await craigIntake({
+          sessionRoot: session.paths.root,
+          registry,
+          ...(options.prober === undefined ? {} : { prober: options.prober }),
+          ...(options.alignmentToleranceS === undefined
+            ? {}
+            : { alignmentToleranceS: options.alignmentToleranceS }),
         });
-        rolls = mapRolls(parsed, registry);
-        qa.push(...parserQa(parsed.qa.entries, roll20.path, session.paths.root));
-        qa.push(...timing.qa);
-        qa.push(...rollQa(rolls));
-        const clockOffset = timing.clock_offset_s;
-        roll20Source = {
-          path: slashRelative(session.paths.root, roll20.path),
-          sha256: await hashFile(roll20.path),
-          message_count: parsed.messages.length + parsed.turnorder_events.length,
-          roll_count: rolls.length,
-          capture_mode: captureMode(roll20),
-          time_basis: timing.time_basis,
-          ...(clockOffset === null ? {} : { clock_offset_s: clockOffset }),
-        };
-      }
 
-      const manifest: Manifest = {
-        session_id: session.descriptor.id,
-        recording: craig.recording,
-        tracks: craig.tracks,
-        rolls,
-        roll20: roll20Source,
-        qa,
-      };
-      progress(0.95, "writing intake manifest");
-      await writeArtifact(session, "manifest", manifest, options.io);
-      progress(1, "intake complete");
-      return manifest;
-    },
-  );
+        const qa: QaEntry[] = [...craig.qa];
+        let rolls: ManifestRoll[] = [];
+        const roll20 = await findRoll20Input(session.paths.root);
+        let roll20Source: Manifest["roll20"] = null;
+        if (roll20 === null) {
+          qa.push(qaForMissingRoll20(join(session.paths.root, "input", "roll20")));
+        } else {
+          progress(0.65, "parsing Roll20 capture");
+          const parsed = parseRoll20(roll20.raw);
+          const timing = resolveRoll20Time(parsed.normalized, {
+            started_at: craig.recording.started_at,
+            duration_s: craig.recording.duration_s,
+          });
+          rolls = mapRolls(parsed, registry);
+          qa.push(...parserQa(parsed.qa.entries, roll20.path, session.paths.root, parsed.messages));
+          qa.push(...timing.qa);
+          qa.push(...rollQa(rolls));
+          const clockOffset = timing.clock_offset_s;
+          roll20Source = {
+            path: slashRelative(session.paths.root, roll20.path),
+            sha256: await hashFile(roll20.path),
+            message_count: parsed.messages.length + parsed.turnorder_events.length,
+            roll_count: rolls.length,
+            capture_mode: captureMode(roll20),
+            time_basis: timing.time_basis,
+            ...(clockOffset === null ? {} : { clock_offset_s: clockOffset }),
+          };
+        }
+
+        const rawManifest: Manifest = {
+          session_id: session.descriptor.id,
+          recording: craig.recording,
+          tracks: craig.tracks,
+          rolls,
+          roll20: roll20Source,
+          qa,
+        };
+        const report = buildIntakeQaReport({
+          manifest: rawManifest,
+          registry,
+          ...(options.activePlayerIds === undefined
+            ? {}
+            : { activePlayerIds: options.activePlayerIds }),
+        });
+        const manifest: Manifest = { ...rawManifest, qa: report.entries };
+        progress(0.95, "writing intake manifest");
+        await writeArtifact(session, "manifest", manifest, options.io);
+        await writeIntakeQaReport(session, report, options.io);
+        if (db !== null) mirrorIntakeQa(db, session, report);
+        progress(1, "intake complete");
+        return manifest;
+      },
+    );
+
+    // A skipped stage still refreshes the disposable DB mirror. This matters
+    // after the database was deleted and rebuilt while artifacts remained.
+    if (result.skipped && db !== null) {
+      mirrorIntakeQa(db, session, await readIntakeQaReport(session));
+    }
+    return result;
+  } finally {
+    if (options.db === undefined && db !== null) closeDb(db);
+  }
 }
 
 /** Short aliases for callers that name stages by their operation. */

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { resolve } from "node:path";
 import { DEFAULT_SIDECAR_PORT, formatConfig, resolveConfig } from "./config.js";
 
 const saved = { ...process.env };
@@ -38,5 +39,16 @@ describe("resolveConfig", () => {
     expect(config.sessionsRoot.source).toBe("env");
     expect(config.sessionsRoot.value).toMatch(/elsewhere$/);
     expect(config.sessionsRoot.value).not.toBe("./elsewhere");
+    expect(config.databasePath.source).toBe("default");
+    expect(config.databasePath.value).toMatch(/[\\/]data[\\/]notes\.db$/);
+  });
+
+  it("allows an explicit database path override", () => {
+    process.env["DND_DATABASE_PATH"] = "./custom/notes.db";
+    const config = resolveConfig(process.cwd());
+    expect(config.databasePath).toEqual({
+      value: resolve("./custom/notes.db"),
+      source: "env",
+    });
   });
 });
