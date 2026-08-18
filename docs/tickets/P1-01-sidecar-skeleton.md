@@ -2,14 +2,14 @@
 id: P1-01
 phase: 1
 title: Python sidecar skeleton and job registry
-status: approved
+status: done
 assignee: "orchestrator"
 depends_on: [P0-02]
 scope:
   - sidecar/dnd_sidecar/**
   - sidecar/tests/**
 estimate: M
-commit: ""
+commit: "42d7e12"
 ---
 
 ## Why
