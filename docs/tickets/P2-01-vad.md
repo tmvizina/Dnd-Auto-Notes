@@ -2,7 +2,7 @@
 id: P2-01
 phase: 2
 title: VAD segmentation per track
-status: in_progress
+status: done
 assignee: "luna-p2-01"
 depends_on: [P1-01, P1-09]
 scope:
@@ -10,7 +10,7 @@ scope:
   - sidecar/dnd_sidecar/server.py
   - sidecar/tests/test_vad.py
 estimate: M
-commit: ""
+commit: "edd2445"
 ---
 
 ## Why
@@ -28,8 +28,8 @@ A four-hour track is mostly silence. Segmenting first means ASR runs on minutes 
 
 ## Acceptance
 
-- [ ] Segments on the synthetic fixture match `truth.json` boundaries within 200 ms at both edges.
-- [ ] The energy fallback produces usable segments with Silero absent.
-- [ ] A 30-minute track segments in under 30 s on the M1 Max with the fallback.
-- [ ] `max_segment_s` splits produce overlapping windows so no word is cut in half.
-- [ ] Source files are byte-identical after the run.
+- [x] Segments on the synthetic fixture match `truth.json` boundaries within 200 ms at both edges.
+- [x] The energy fallback produces usable segments with Silero absent.
+- [x] A 30-minute track segments in under 30 s on the M1 Max with the fallback.
+- [x] `max_segment_s` splits produce overlapping windows so no word is cut in half.
+- [x] Source files are byte-identical after the run.
