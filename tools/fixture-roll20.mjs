@@ -10,11 +10,17 @@ function messageId(index) {
 }
 
 function rollHtml(roll) {
-  const dice = roll.dice.map((d) => `<div class="die d20">${d}</div>`).join("");
-  const template = roll.kind === "attack" || roll.kind === "damage" ? "atk" : "simple";
+  const sides = Number(roll.formula.match(/\d+d(\d+)/i)?.[1] ?? 20);
+  const dice = roll.dice
+    .map((d) => `<div class="die d${sides}" data-sides="${sides}">${d}</div>`)
+    .join("");
+  const template = roll.kind === "attack" ? "atk" : roll.kind === "damage" ? "dmg" : "simple";
   return (
     `<div class="sheet-rolltemplate-${template}">` +
     `<div class="sheet-label">${roll.kind}</div>` +
+    (roll.target
+      ? `<div class="sheet-target" data-target="${roll.target}">${roll.target}</div>`
+      : "") +
     `<div class="inlinerollresult showtip" title="Rolling ${roll.formula}">` +
     `<div class="dicegrouping">${dice}</div>` +
     `<span class="basicdiceroll">+${roll.mod}</span>` +
@@ -74,6 +80,7 @@ export function buildMessages(recordingStartMs) {
     ...event,
     id: messageId(index),
     t_wall_ms: at(event.t),
+    seq: index,
   }));
 }
 
@@ -87,6 +94,7 @@ export function toCaptureJson(messages, gameId) {
       .filter((m) => m.kind !== "turnorder")
       .map((m) => ({
         id: m.id,
+        seq: m.seq,
         t_wall_ms: m.t_wall_ms,
         who: m.who,
         kind: m.kind,
@@ -95,7 +103,11 @@ export function toCaptureJson(messages, gameId) {
         roll: m.roll
           ? {
               formula: m.roll.formula,
-              dice: m.roll.dice.map((value) => ({ sides: 20, value, dropped: false })),
+              dice: m.roll.dice.map((value) => ({
+                sides: Number(m.roll.formula.match(/\d+d(\d+)/i)?.[1] ?? 20),
+                value,
+                dropped: false,
+              })),
               modifiers: m.roll.mod,
               total: m.roll.total,
               kind: m.roll.kind,
@@ -106,12 +118,14 @@ export function toCaptureJson(messages, gameId) {
       })),
     turnorder_events: messages
       .filter((m) => m.kind === "turnorder")
-      .map((m, seq) => ({
-        seq,
+      .map((m) => ({
+        seq: m.seq,
         id: m.id,
         t_wall_ms: m.t_wall_ms,
+        who: m.who,
         marker: m.marker,
         entries: m.entries,
+        outer_html: renderMessage(m),
       })),
   };
 }
@@ -120,17 +134,17 @@ function renderMessage(message) {
   const by = `<span class="by">${message.who}:</span>`;
   switch (message.kind) {
     case "emote":
-      return `<div class="message emote" data-messageid="${message.id}">${message.who} ${message.text}</div>`;
+      return `<div class="message emote" data-messageid="${message.id}" data-seq="${message.seq}"><span class="by">${message.who}:</span>${message.text}</div>`;
     case "whisper":
-      return `<div class="message whisper" data-messageid="${message.id}">${by} (whispered to ${message.to}) ${message.text}</div>`;
+      return `<div class="message whisper" data-messageid="${message.id}" data-seq="${message.seq}" data-to="${message.to}">${by} (whispered to ${message.to}) ${message.text}</div>`;
     case "desc":
-      return `<div class="message desc" data-messageid="${message.id}">${message.text}</div>`;
+      return `<div class="message desc" data-messageid="${message.id}" data-seq="${message.seq}"><span class="by">${message.who}:</span>${message.text}</div>`;
     case "rollresult":
-      return `<div class="message rollresult" data-messageid="${message.id}">${by}${rollHtml(message.roll)}</div>`;
+      return `<div class="message rollresult" data-messageid="${message.id}" data-seq="${message.seq}">${by}${rollHtml(message.roll)}</div>`;
     case "turnorder":
-      return `<div class="message system" data-messageid="${message.id}">Turn order updated</div>`;
+      return `<div class="message turnorder system" data-messageid="${message.id}" data-seq="${message.seq}" data-marker="${message.marker}" data-turnorder='${JSON.stringify(message.entries)}'>${by}Turn order updated</div>`;
     default:
-      return `<div class="message general" data-messageid="${message.id}">${by} ${message.text}</div>`;
+      return `<div class="message general" data-messageid="${message.id}" data-seq="${message.seq}">${by} ${message.text}</div>`;
   }
 }
 

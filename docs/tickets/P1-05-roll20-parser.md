@@ -2,11 +2,13 @@
 id: P1-05
 phase: 1
 title: Roll20 capture parser
-status: todo
-assignee: ""
+status: approved
+assignee: "orchestrator"
 depends_on: [P1-04, P0-06]
 scope:
   - packages/core/src/intake/roll20/**
+  - packages/core/src/index.ts
+  - tools/fixture-roll20.mjs
 estimate: L
 commit: ""
 ---
@@ -28,13 +30,13 @@ The parsed roll stream is what makes combat reconstruction possible and what anc
 
 ## Acceptance
 
-- [ ] All fixture message kinds parse into the right variant.
-- [ ] An attack roll with advantage yields both d20 values and the used one.
-- [ ] A damage roll with a dropped die records `dropped: true` on the right die.
-- [ ] Turn-order transitions produce combat start and end markers at the right sequence positions.
-- [ ] Unknown roll templates round-trip as `other` with text intact and are counted.
-- [ ] Parsing the HTML archive and the JSON capture of the same session yields identical normalised output apart from timing fields.
-- [ ] The parser is pure: no filesystem, no network, no clock.
+- [x] All fixture message kinds parse into the right variant.
+- [x] An attack roll with advantage yields both d20 values and the used one.
+- [x] A damage roll with a dropped die records `dropped: true` on the right die.
+- [x] Turn-order transitions produce combat start and end markers at the right sequence positions.
+- [x] Unknown roll templates round-trip as `other` with text intact and are counted.
+- [x] Parsing the HTML archive and the JSON capture of the same session yields identical normalised output apart from timing fields.
+- [x] The parser is pure: no filesystem, no network, no clock.
 
 ## Notes
 
