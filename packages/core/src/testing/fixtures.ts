@@ -10,6 +10,7 @@ export const MINIMAL: { [K in ValidatedArtifactName]: unknown } = {
     session_id: "2026-08-16-s42",
     recording: { started_at: null, duration_s: 0, source: "craig", track_count: 0 },
     tracks: [],
+    rolls: [],
     roll20: null,
     qa: [],
   },

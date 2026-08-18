@@ -1,5 +1,15 @@
 import { z } from "zod";
-import { NonEmpty, PlayerId, QaEntry, Seconds, Sha256, SessionId, TrackId } from "./common.js";
+import {
+  NonEmpty,
+  PlayerId,
+  QaEntry,
+  RollId,
+  Seconds,
+  Sha256,
+  SessionId,
+  TrackId,
+} from "./common.js";
+import { RollKind } from "./timeline.js";
 
 /** Output of the intake stage: what we have, whose it is, and whether it lines up. */
 
@@ -41,6 +51,41 @@ export const Roll20Source = z.object({
   clock_offset_s: z.number().optional(),
 });
 
+/** A die as captured by Roll20; a missing side count is parser evidence, not a guess. */
+export const ManifestDie = z.object({
+  sides: z.number().int().positive().nullable(),
+  value: z.number().finite(),
+  dropped: z.boolean(),
+});
+
+/**
+ * Roll evidence copied into the intake manifest. `id` is a pipeline-local,
+ * deterministic id; source identifiers and account fields remain nullable so
+ * an incomplete capture is visible rather than silently repaired.
+ */
+export const ManifestRoll = z.object({
+  id: RollId,
+  seq: z.number().int().nonnegative(),
+  who: z.string().nullable(),
+  player_id: PlayerId.nullable(),
+  formula: z.string(),
+  dice: z.array(ManifestDie),
+  modifiers: z.number().finite(),
+  total: z.number().finite().nullable(),
+  roll_kind: RollKind,
+  advantage: z.enum(["none", "advantage", "disadvantage"]),
+  raw_ref: NonEmpty,
+  /** Optional fields retain parser details that older captures may not carry. */
+  source_id: z.string().nullable().optional(),
+  roll20_player_id: z.string().nullable().optional(),
+  kind: RollKind.optional(),
+  used: z.number().finite().nullable().optional(),
+  used_result: z.number().finite().nullable().optional(),
+  target: z.string().nullable().optional(),
+  npc_mentions: z.array(z.string()).optional(),
+});
+export type ManifestRoll = z.infer<typeof ManifestRoll>;
+
 export const Manifest = z.object({
   session_id: SessionId,
   recording: z.object({
@@ -50,6 +95,7 @@ export const Manifest = z.object({
     track_count: z.number().int().nonnegative(),
   }),
   tracks: z.array(Track),
+  rolls: z.array(ManifestRoll).default([]),
   roll20: Roll20Source.nullable(),
   qa: z.array(QaEntry).default([]),
 });
