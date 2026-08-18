@@ -2,13 +2,13 @@
 id: P1-08
 phase: 1
 title: SQLite schema and run ledger
-status: approved
+status: done
 assignee: "orchestrator"
 depends_on: [P0-06]
 scope:
   - packages/core/src/db/**
 estimate: M
-commit: ""
+commit: "da278f1"
 ---
 
 ## Why
