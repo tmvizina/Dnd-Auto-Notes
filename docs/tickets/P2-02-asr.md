@@ -2,11 +2,12 @@
 id: P2-02
 phase: 2
 title: ASR with word timestamps
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p2-02"
 depends_on: [P2-01]
 scope:
   - sidecar/dnd_sidecar/asr.py
+  - sidecar/dnd_sidecar/server.py
   - sidecar/tests/test_asr.py
 estimate: L
 commit: ""

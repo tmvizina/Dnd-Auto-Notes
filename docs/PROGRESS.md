@@ -3,7 +3,7 @@
 Single-page status snapshot for the full backlog. Ticket frontmatter remains authoritative; update this file whenever a ticket changes status or records its implementation commit.
 
 **Last updated:** 2026-08-18
-**Overall:** 19 done, 2 in progress, 1 blocked, 30 todo - 52 total (36.5% done)
+**Overall:** 19 done, 3 in progress, 1 blocked, 29 todo - 52 total (36.5% done)
 
 ## Phase 0 — Foundations
 
@@ -36,7 +36,7 @@ Single-page status snapshot for the full backlog. Ticket frontmatter remains aut
 | Ticket                                         | Status      | Assignee   | Commit | Title                                           |
 | ---------------------------------------------- | ----------- | ---------- | ------ | ----------------------------------------------- |
 | [P2-01](tickets/P2-01-vad.md)                  | done        | luna-p2-01 | `edd2445` | VAD segmentation                             |
-| [P2-02](tickets/P2-02-asr.md)                  | todo        | —          | —      | ASR with word timestamps                        |
+| [P2-02](tickets/P2-02-asr.md)                  | in_progress | luna-p2-02 | -      | ASR with word timestamps                        |
 | [P2-03](tickets/P2-03-timeline-merge.md)       | todo        | —          | —      | Cross-track timeline merge                      |
 | [P2-04](tickets/P2-04-utterance-features.md)   | todo        | —          | —      | Utterance embeddings and prosody features       |
 | [P2-05](tickets/P2-05-voice-profiles.md)       | todo        | —          | —      | Voice-mode clustering and campaign profile bank |
