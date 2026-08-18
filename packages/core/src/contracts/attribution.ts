@@ -8,6 +8,7 @@ import {
   Seconds,
   UtteranceId,
 } from "./common.js";
+import { Prosody } from "./features.js";
 
 /**
  * The decision this project exists to make: player or character, and which one.
@@ -28,12 +29,18 @@ export const Evidence = z.object({
   voice_sim_table: z.number().optional(),
   voice_sim_character: z.number().optional(),
   voice_margin: z.number().optional(),
-  prosody_z: z.number().optional(),
+  prosody_z: Prosody.optional(),
   lex_ooc: z.number().optional(),
   lex_ic: z.number().optional(),
   roll_prox: z.boolean().optional(),
   chat_prox: z.boolean().optional(),
   addressee: z.enum(["dm", "character", "table", "unknown"]).optional(),
+  duration_s: z.number().nonnegative().optional(),
+  is_backchannel: z.boolean().optional(),
+  overlap: z.boolean().optional(),
+  profile_similarity: z.number().optional(),
+  profile_margin: z.number().optional(),
+  profile_match_count: z.number().int().nonnegative().optional(),
   score_ic: z.number().optional(),
 });
 export type Evidence = z.infer<typeof Evidence>;

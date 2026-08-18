@@ -1,0 +1,36 @@
+{
+  "version": "persona-1",
+  "stage_version": 1,
+  "weights": {
+    "bias": 0,
+    "voice_sim_table": 0.9,
+    "voice_sim_character": 1.2,
+    "voice_margin": 1.1,
+    "prosody_f0_mean": 0.02,
+    "prosody_f0_std": 0.02,
+    "prosody_f0_range": 0.02,
+    "prosody_rate_wps": 0.02,
+    "prosody_intensity_mean": 0.02,
+    "prosody_intensity_std": 0.02,
+    "prosody_spectral_tilt": 0.02,
+    "prosody_jitter_proxy": 0.02,
+    "prosody_pause_ratio": 0.02,
+    "lex_ooc": -1.1,
+    "lex_ic": 0.8,
+    "roll_prox": -0.45,
+    "chat_prox": -0.35,
+    "addressee_character": 0.35,
+    "addressee_dm": -0.2,
+    "duration": 0.05,
+    "backchannel": -0.2,
+    "overlap": -0.15
+  },
+  "thresholds": {
+    "lo": 0.35,
+    "hi": 0.65,
+    "match_min_margin": 0.08,
+    "min_similarity": 0.5,
+    "min_duration_s": 0.6,
+    "smoothing_max_confidence": 0.62
+  }
+}
