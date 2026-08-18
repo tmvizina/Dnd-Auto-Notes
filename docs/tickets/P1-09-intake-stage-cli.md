@@ -7,6 +7,11 @@ assignee: "luna-p1-09"
 depends_on: [P1-03, P1-05, P1-06, P1-07, P1-08]
 scope:
   - packages/core/src/stages/intake.ts
+  - packages/core/src/stages/intake.test.ts
+  - packages/core/src/contracts/manifest.ts
+  - packages/core/src/contracts/manifest.test.ts
+  - packages/core/src/testing/fixtures.ts
+  - packages/core/src/index.ts
   - packages/cli/src/**
 estimate: M
 commit: ""
