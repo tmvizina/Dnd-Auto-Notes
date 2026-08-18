@@ -2,14 +2,14 @@
 id: P1-04
 phase: 1
 title: Roll20 browser capture script
-status: approved
+status: done
 assignee: "luna-p1-04b"
 depends_on: [P0-01]
 scope:
   - tools/roll20-capture.js
   - docs/roll20-capture.md
 estimate: M
-commit: ""
+commit: "f4dfd33"
 ---
 
 ## Why
