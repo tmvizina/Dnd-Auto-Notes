@@ -2,7 +2,7 @@
 id: P1-03
 phase: 1
 title: Craig recording intake
-status: in_progress
+status: done
 assignee: "orchestrator"
 depends_on: [P0-06, P1-02]
 scope:
@@ -12,7 +12,7 @@ scope:
   - sidecar/dnd_sidecar/server.py
   - sidecar/tests/test_probe.py
 estimate: M
-commit: ""
+commit: "58bc17b"
 ---
 
 ## Why
@@ -32,12 +32,12 @@ Speaker identity is the one thing this project gets for free, and it comes entir
 
 ## Acceptance
 
-- [ ] The synthetic fixture produces one manifest track per generated file with correct durations.
-- [ ] Filename parsing covers the Craig convention plus three malformed cases without throwing.
-- [ ] A duration outlier sets `aligned: false` and names the outlier track.
-- [ ] The silent track from `--with-defects` is reported with a near-zero `speech_ratio`.
-- [ ] An unmapped username yields `player_id: null` plus a candidate list — never a guess.
-- [ ] Re-running with unchanged inputs re-extracts nothing and rewrites nothing.
+- [x] The synthetic fixture produces one manifest track per generated file with correct durations.
+- [x] Filename parsing covers the Craig convention plus three malformed cases without throwing.
+- [x] A duration outlier sets `aligned: false` and names the outlier track.
+- [x] The silent track from `--with-defects` is reported with a near-zero `speech_ratio`.
+- [x] An unmapped username yields `player_id: null` plus a candidate list — never a guess.
+- [x] Re-running with unchanged inputs re-extracts nothing and rewrites nothing.
 
 ## Scope amendment
 
