@@ -2,8 +2,8 @@
 id: P2-08
 phase: 2
 title: DM to NPC assignment
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p2-08"
 depends_on: [P2-07]
 scope:
   - packages/core/src/persona/dmNpc.ts
