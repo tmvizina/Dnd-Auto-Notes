@@ -2,8 +2,8 @@
 id: P2-03
 phase: 2
 title: Cross-track timeline merge
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p2-03"
 depends_on: [P2-02]
 scope:
   - packages/core/src/stages/transcript.ts
