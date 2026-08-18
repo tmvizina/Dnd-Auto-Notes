@@ -43,6 +43,34 @@ describe("desktop IPC contracts", () => {
     ).toThrowError(/not allowed/);
   });
 
+  it("validates settings reveal and connection-test DTOs", () => {
+    expect(validateRequest(CHANNELS.settings.reveal, { key: "sessionsRoot" })).toEqual({
+      key: "sessionsRoot",
+    });
+    expect(() => validateRequest(CHANNELS.settings.reveal, { key: "provider" })).toThrow(
+      /cannot be revealed/,
+    );
+    expect(
+      validateRequest(CHANNELS.settings.testConnection, {
+        baseUrl: "http://127.0.0.1:1234/v1",
+        model: "local-model",
+        timeoutMs: 1_000,
+      }),
+    ).toEqual({
+      baseUrl: "http://127.0.0.1:1234/v1",
+      model: "local-model",
+      timeoutMs: 1_000,
+    });
+    expect(
+      validateResponse(CHANNELS.settings.testConnection, {
+        ok: true,
+        latencyMs: 12,
+        models: ["local-model"],
+        message: "Connected",
+      }),
+    ).toEqual({ ok: true, latencyMs: 12, models: ["local-model"], message: "Connected" });
+  });
+
   it("strips every internal field from an outbound event", () => {
     const sanitized = sanitizeOutboundEvent({
       type: "log",

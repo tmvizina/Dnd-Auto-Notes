@@ -1,3 +1,5 @@
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("electron", () => ({
@@ -21,9 +23,58 @@ import {
   createAcceptedPipelineRunTracker,
   createQuitStopper,
   createSidecarHandlers,
+  runtimeRootsForSettings,
+  sidecarRepoRootForSetting,
 } from "./main.js";
+import { createSettingsHandlers } from "./handlers/settings.js";
 
 describe("desktop quit supervision", () => {
+  it("composes persisted path settings into the next desktop runtime", () => {
+    expect(
+      runtimeRootsForSettings(
+        {
+          sessionsRoot: "C:\\campaign-sessions",
+          campaignRoot: "C:\\campaign-data",
+          sidecarPath: "C:\\tools\\sidecar",
+        },
+        {
+          sessionsRoot: "C:\\default-sessions",
+          campaignRoot: "C:\\default-campaign",
+          sidecarRepoRoot: "C:\\repo",
+        },
+      ),
+    ).toEqual({
+      sessionsRoot: "C:\\campaign-sessions",
+      campaignRoot: "C:\\campaign-data",
+      sidecarRepoRoot: "C:\\tools",
+    });
+    expect(sidecarRepoRootForSetting(undefined, "C:\\repo")).toBe("C:\\repo");
+  });
+
+  it("loads persisted paths before composing handlers on restart", async () => {
+    const root = await mkdtemp(join(process.cwd(), ".p4-11-runtime-"));
+    try {
+      const settings = createSettingsHandlers({ settingsPath: join(root, "settings.json") });
+      await settings.settingsSet({ key: "sessionsRoot", value: join(root, "sessions") });
+      await settings.settingsSet({ key: "campaignRoot", value: join(root, "campaign") });
+      await mkdir(join(root, "sidecar"));
+      await settings.settingsSet({ key: "sidecarPath", value: join(root, "sidecar") });
+      const restarted = createSettingsHandlers({ settingsPath: join(root, "settings.json") });
+      const roots = runtimeRootsForSettings((await restarted.settingsGet()).settings, {
+        sessionsRoot: "C:\\default-sessions",
+        campaignRoot: "C:\\default-campaign",
+        sidecarRepoRoot: "C:\\repo",
+      });
+      expect(roots).toEqual({
+        sessionsRoot: join(root, "sessions"),
+        campaignRoot: join(root, "campaign"),
+        sidecarRepoRoot: root,
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("awaits one owned-sidecar stop even when quit is requested twice", async () => {
     let release: (() => void) | undefined;
     const stop = vi.fn(
@@ -60,6 +111,20 @@ describe("desktop quit supervision", () => {
     const run = await handlers.pipelineRun?.({ sessionId: "session-1" }, {} as never);
     expect(run).toMatchObject({ runId: expect.any(String) });
     expect(supervisor.ensureRunning).toHaveBeenCalledTimes(1);
+  });
+
+  it("includes the sidecar capability report in settings-facing status", async () => {
+    const supervisor = {
+      state: { status: "ready" as const, restartAttempt: 0 },
+      ensureRunning: vi.fn(async () => supervisor.state),
+      getLogTail: vi.fn(async () => []),
+      client: () => ({ health: async () => ({ capabilities: { faster_whisper: true } }) }),
+    };
+    const handlers = createSidecarHandlers(supervisor);
+    await expect(handlers.sidecarStatus?.({} as never, {} as never)).resolves.toEqual({
+      status: "ready",
+      capabilities: { faster_whisper: true },
+    });
   });
 
   it("returns the demand-start failure without posting a sidecar job", async () => {

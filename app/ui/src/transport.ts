@@ -30,8 +30,12 @@ import type {
   SessionsRevealRequest,
   SessionsRevealResponse,
   SettingsGetResponse,
+  SettingsRevealRequest,
+  SettingsRevealResponse,
   SettingsSetRequest,
   SettingsSetResponse,
+  SettingsTestConnectionRequest,
+  SettingsTestConnectionResponse,
   SidecarLogsRequest,
   SidecarLogsResponse,
   SidecarStatusEvent,
@@ -67,6 +71,8 @@ export type TransportOperation =
   | "runs.onEvent"
   | "settings.get"
   | "settings.set"
+  | "settings.reveal"
+  | "settings.testConnection"
   | "sidecar.status"
   | "sidecar.logs";
 
@@ -108,6 +114,12 @@ export interface DesktopBridgeLike {
   readonly settings: {
     readonly get: () => Promise<IpcEnvelope<SettingsGetResponse>>;
     readonly set: (request: SettingsSetRequest) => Promise<IpcEnvelope<SettingsSetResponse>>;
+    readonly reveal: (
+      request: SettingsRevealRequest,
+    ) => Promise<IpcEnvelope<SettingsRevealResponse>>;
+    readonly testConnection: (
+      request: SettingsTestConnectionRequest,
+    ) => Promise<IpcEnvelope<SettingsTestConnectionResponse>>;
   };
   readonly sidecar: {
     readonly status: () => Promise<IpcEnvelope<SidecarStatusResponse>>;
@@ -138,6 +150,10 @@ export interface RendererTransport {
   readonly settings: {
     readonly get: () => Promise<SettingsGetResponse>;
     readonly set: (request: SettingsSetRequest) => Promise<SettingsSetResponse>;
+    readonly reveal: (request: SettingsRevealRequest) => Promise<SettingsRevealResponse>;
+    readonly testConnection: (
+      request: SettingsTestConnectionRequest,
+    ) => Promise<SettingsTestConnectionResponse>;
   };
   readonly sidecar: {
     readonly status: () => Promise<SidecarStatusResponse>;
@@ -211,6 +227,8 @@ export function isDesktopBridge(value: unknown): value is DesktopBridgeLike {
     isFunction(runs["onEvent"]) &&
     isFunction(settings["get"]) &&
     isFunction(settings["set"]) &&
+    isFunction(settings["reveal"]) &&
+    isFunction(settings["testConnection"]) &&
     isFunction(sidecar["status"]) &&
     isFunction(sidecar["logs"])
   );
@@ -255,6 +273,9 @@ function electronTransport(bridge: DesktopBridgeLike): RendererTransport {
     settings: {
       get: () => unwrap("settings.get", bridge.settings.get),
       set: (request) => unwrap("settings.set", () => bridge.settings.set(request)),
+      reveal: (request) => unwrap("settings.reveal", () => bridge.settings.reveal(request)),
+      testConnection: (request) =>
+        unwrap("settings.testConnection", () => bridge.settings.testConnection(request)),
     },
     sidecar: {
       status: () => unwrap("sidecar.status", bridge.sidecar.status),
@@ -283,6 +304,9 @@ function unavailableTransport(): RendererTransport {
   const unsubscribe = unavailableCall<RunsUnsubscribeResponse>("runs.unsubscribe");
   const settingsGet = unavailableCall<SettingsGetResponse>("settings.get");
   const settingsSet = unavailableCall<SettingsSetResponse>("settings.set");
+  const settingsReveal = unavailableCall<SettingsRevealResponse>("settings.reveal");
+  const settingsTestConnection =
+    unavailableCall<SettingsTestConnectionResponse>("settings.testConnection");
   const sidecarStatus = unavailableCall<SidecarStatusResponse>("sidecar.status");
   const sidecarLogs = unavailableCall<SidecarLogsResponse>("sidecar.logs");
   return {
@@ -296,7 +320,12 @@ function unavailableTransport(): RendererTransport {
         throw new UnavailableOperationError("runs.onEvent");
       },
     },
-    settings: { get: settingsGet, set: settingsSet },
+    settings: {
+      get: settingsGet,
+      set: settingsSet,
+      reveal: settingsReveal,
+      testConnection: settingsTestConnection,
+    },
     sidecar: { status: sidecarStatus, logs: sidecarLogs },
   };
 }

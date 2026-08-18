@@ -48,6 +48,36 @@ describe("preload bridge", () => {
     expect(invoke).toHaveBeenCalledWith(CHANNELS.settings.get, success({}));
   });
 
+  it("validates and forwards settings reveal and connection test calls", async () => {
+    const invoke = vi.fn(async (channel: string): Promise<unknown> => {
+      if (channel === CHANNELS.settings.reveal)
+        return success({ key: "sessionsRoot", revealed: true });
+      return success({ ok: true, latencyMs: 7, models: ["local"], message: "Connected" });
+    });
+    const fake: IpcRendererLike = { invoke, on: vi.fn(), removeListener: vi.fn() };
+    const bridge = buildBridge(fake);
+    await expect(bridge.settings.reveal({ key: "sessionsRoot" })).resolves.toEqual({
+      ok: true,
+      value: { key: "sessionsRoot", revealed: true },
+    });
+    await expect(
+      bridge.settings.testConnection({ baseUrl: "http://127.0.0.1:1234/v1" }),
+    ).resolves.toEqual({
+      ok: true,
+      value: { ok: true, latencyMs: 7, models: ["local"], message: "Connected" },
+    });
+    expect(invoke).toHaveBeenNthCalledWith(
+      1,
+      CHANNELS.settings.reveal,
+      success({ key: "sessionsRoot" }),
+    );
+    expect(invoke).toHaveBeenNthCalledWith(
+      2,
+      CHANNELS.settings.testConnection,
+      success({ baseUrl: "http://127.0.0.1:1234/v1" }),
+    );
+  });
+
   it("drops invalid push events and unregisters listeners", () => {
     let receive: ((event: unknown, payload: unknown) => void) | undefined;
     const removeListener = vi.fn();

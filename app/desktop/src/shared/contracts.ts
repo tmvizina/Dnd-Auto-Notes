@@ -37,6 +37,13 @@ interface PlainRecord {
   readonly lines?: unknown;
   readonly subscriptionId?: unknown;
   readonly key?: unknown;
+  readonly baseUrl?: unknown;
+  readonly model?: unknown;
+  readonly timeoutMs?: unknown;
+  readonly latencyMs?: unknown;
+  readonly models?: unknown;
+  readonly revealed?: unknown;
+  readonly capabilities?: unknown;
   readonly settings?: unknown;
   readonly sessions?: unknown;
   readonly nextCursor?: unknown;
@@ -50,7 +57,6 @@ interface PlainRecord {
   readonly destinationName?: unknown;
   readonly kind?: unknown;
   readonly sourcePath?: unknown;
-  readonly revealed?: unknown;
   readonly entries?: unknown;
   readonly severity?: unknown;
   readonly hint?: unknown;
@@ -105,6 +111,8 @@ const CHANNEL_VALUES = {
   settings: {
     get: "dnd/settings/get",
     set: "dnd/settings/set",
+    reveal: "dnd/settings/reveal",
+    testConnection: "dnd/settings/test-connection",
   },
   sidecar: {
     status: "dnd/sidecar/status",
@@ -637,6 +645,7 @@ export interface SidecarStatusEvent {
   readonly status: "stopped" | "starting" | "ready" | "unhealthy" | "unavailable";
   readonly reason?: string;
   readonly setupCommand?: string;
+  readonly capabilities?: Readonly<Record<string, boolean>>;
 }
 
 export type DesktopEvent = RunEvent | SidecarStatusEvent;
@@ -665,6 +674,14 @@ export const SETTING_KEYS = deepFreeze([
 
 export type SettingKey = (typeof SETTING_KEYS)[number];
 
+export const PATH_SETTING_KEYS = deepFreeze([
+  "sessionsRoot",
+  "campaignRoot",
+  "sidecarPath",
+] as const);
+
+export type PathSettingKey = (typeof PATH_SETTING_KEYS)[number];
+
 export interface SettingsGetResponse {
   readonly settings: Readonly<Partial<Record<SettingKey, string>>>;
 }
@@ -679,10 +696,33 @@ export interface SettingsSetResponse {
   readonly value: string;
 }
 
+export interface SettingsRevealRequest {
+  readonly key: string;
+}
+
+export interface SettingsRevealResponse {
+  readonly key: PathSettingKey;
+  readonly revealed: boolean;
+}
+
+export interface SettingsTestConnectionRequest {
+  readonly baseUrl: string;
+  readonly model?: string;
+  readonly timeoutMs?: number;
+}
+
+export interface SettingsTestConnectionResponse {
+  readonly ok: boolean;
+  readonly latencyMs: number | null;
+  readonly models: readonly string[];
+  readonly message: string;
+}
+
 export interface SidecarStatusResponse {
   readonly status: SidecarStatusEvent["status"];
   readonly reason?: string;
   readonly setupCommand?: string;
+  readonly capabilities?: Readonly<Record<string, boolean>>;
 }
 
 export interface SidecarLogsRequest {
@@ -707,6 +747,8 @@ export interface IpcRequestMap {
   runsUnsubscribe: RunsUnsubscribeRequest;
   settingsGet: Record<string, never>;
   settingsSet: SettingsSetRequest;
+  settingsReveal: SettingsRevealRequest;
+  settingsTestConnection: SettingsTestConnectionRequest;
   sidecarStatus: Record<string, never>;
   sidecarLogs: SidecarLogsRequest;
 }
@@ -725,6 +767,8 @@ export interface IpcResponseMap {
   runsUnsubscribe: RunsUnsubscribeResponse;
   settingsGet: SettingsGetResponse;
   settingsSet: SettingsSetResponse;
+  settingsReveal: SettingsRevealResponse;
+  settingsTestConnection: SettingsTestConnectionResponse;
   sidecarStatus: SidecarStatusResponse;
   sidecarLogs: SidecarLogsResponse;
 }
@@ -747,6 +791,8 @@ const operationForChannel = new Map<string, IpcOperation>([
   [CHANNELS.runs.unsubscribe, "runsUnsubscribe"],
   [CHANNELS.settings.get, "settingsGet"],
   [CHANNELS.settings.set, "settingsSet"],
+  [CHANNELS.settings.reveal, "settingsReveal"],
+  [CHANNELS.settings.testConnection, "settingsTestConnection"],
   [CHANNELS.sidecar.status, "sidecarStatus"],
   [CHANNELS.sidecar.logs, "sidecarLogs"],
 ]);
@@ -1176,7 +1222,40 @@ function parseRequestForOperation(operation: IpcOperation, value: unknown): IpcR
         throw invalid(ERROR_CODES.settingsKeyNotAllowed, `setting key "${key}" is not allowed`, {
           field: "key",
         });
-      return { key, value: requiredString(record.value, "value", IPC_LIMITS.maxRequestBytes) };
+      const parsedValue =
+        key === "providerModel" && record.value === ""
+          ? ""
+          : requiredString(record.value, "value", IPC_LIMITS.maxRequestBytes);
+      return { key, value: parsedValue };
+    }
+    case "settingsReveal": {
+      const record = parseObject(value, ["key"], "settings.reveal request");
+      const key = requiredString(record.key, "key", 128);
+      if (!(PATH_SETTING_KEYS as readonly string[]).includes(key))
+        throw invalid(
+          ERROR_CODES.settingsKeyNotAllowed,
+          `setting key "${key}" cannot be revealed`,
+          {
+            field: "key",
+          },
+        );
+      return { key };
+    }
+    case "settingsTestConnection": {
+      const record = parseObject(
+        value,
+        ["baseUrl", "model", "timeoutMs"],
+        "settings.testConnection request",
+      );
+      return {
+        baseUrl: requiredString(record.baseUrl, "baseUrl", 2_048),
+        ...(record.model === undefined
+          ? {}
+          : { model: requiredString(record.model, "model", 512) }),
+        ...(record.timeoutMs === undefined
+          ? {}
+          : { timeoutMs: requiredInteger(record.timeoutMs, "timeoutMs", 250, 30_000) }),
+      };
     }
     case "sidecarStatus":
       parseObject(value, [], "sidecar.status request");
@@ -1331,7 +1410,10 @@ function parseResponseForOperation(operation: IpcOperation, value: unknown): Ipc
           throw invalid(ERROR_CODES.settingsKeyNotAllowed, `setting key "${key}" is not allowed`, {
             field: key,
           });
-        settings[key as SettingKey] = requiredString(record.settings[key], `settings.${key}`);
+        settings[key as SettingKey] =
+          key === "providerModel" && record.settings[key] === ""
+            ? ""
+            : requiredString(record.settings[key], `settings.${key}`);
       }
       return { settings };
     }
@@ -1342,12 +1424,65 @@ function parseResponseForOperation(operation: IpcOperation, value: unknown): Ipc
         throw invalid(ERROR_CODES.settingsKeyNotAllowed, `setting key "${key}" is not allowed`, {
           field: "key",
         });
-      return { key: key as SettingKey, value: requiredString(record.value, "value") };
+      return {
+        key: key as SettingKey,
+        value:
+          key === "providerModel" && record.value === ""
+            ? ""
+            : requiredString(record.value, "value"),
+      };
+    }
+    case "settingsReveal": {
+      const record = parseObject(value, ["key", "revealed"], "settings.reveal response");
+      const key = requiredString(record.key, "key", 128);
+      if (!(PATH_SETTING_KEYS as readonly string[]).includes(key))
+        throw invalid(
+          ERROR_CODES.settingsKeyNotAllowed,
+          `setting key "${key}" cannot be revealed`,
+          {
+            field: "key",
+          },
+        );
+      if (typeof record.revealed !== "boolean")
+        throw invalid(ERROR_CODES.invalidValue, "revealed must be a boolean", {
+          field: "revealed",
+        });
+      return { key: key as PathSettingKey, revealed: record.revealed };
+    }
+    case "settingsTestConnection": {
+      const record = parseObject(
+        value,
+        ["ok", "latencyMs", "models", "message"],
+        "settings.testConnection response",
+      );
+      if (typeof record.ok !== "boolean")
+        throw invalid(ERROR_CODES.invalidValue, "ok must be a boolean", { field: "ok" });
+      if (
+        record.latencyMs !== null &&
+        (typeof record.latencyMs !== "number" ||
+          !Number.isFinite(record.latencyMs) ||
+          record.latencyMs < 0)
+      )
+        throw invalid(ERROR_CODES.invalidValue, "latencyMs must be null or a non-negative number", {
+          field: "latencyMs",
+        });
+      if (!Array.isArray(record.models) || record.models.length > 256)
+        throw invalid(ERROR_CODES.invalidValue, "models must be a bounded array", {
+          field: "models",
+        });
+      return {
+        ok: record.ok,
+        latencyMs: record.latencyMs as number | null,
+        models: record.models.map((model, index) =>
+          requiredString(model, `models[${String(index)}]`, 512),
+        ),
+        message: requiredString(record.message, "message", IPC_LIMITS.maxStringLength),
+      };
     }
     case "sidecarStatus": {
       const record = parseObject(
         value,
-        ["status", "reason", "setupCommand"],
+        ["status", "reason", "setupCommand", "capabilities"],
         "sidecar.status response",
       );
       if (
@@ -1358,12 +1493,28 @@ function parseResponseForOperation(operation: IpcOperation, value: unknown): Ipc
         record.status !== "unavailable"
       )
         throw invalid(ERROR_CODES.invalidValue, "sidecar status is invalid", { field: "status" });
+      const capabilities = record.capabilities;
+      if (capabilities !== undefined && !isRecord(capabilities))
+        throw invalid(ERROR_CODES.invalidValue, "capabilities must be an object", {
+          field: "capabilities",
+        });
+      const parsedCapabilities: Record<string, boolean> = {};
+      if (isRecord(capabilities)) {
+        for (const [key, value] of Object.entries(capabilities)) {
+          if (typeof value !== "boolean")
+            throw invalid(ERROR_CODES.invalidValue, `capability "${key}" must be boolean`, {
+              field: `capabilities.${key}`,
+            });
+          parsedCapabilities[key] = value;
+        }
+      }
       return {
         status: record.status,
         ...(record.reason === undefined ? {} : { reason: requiredString(record.reason, "reason") }),
         ...(record.setupCommand === undefined
           ? {}
           : { setupCommand: requiredString(record.setupCommand, "setupCommand") }),
+        ...(capabilities === undefined ? {} : { capabilities: parsedCapabilities }),
       };
     }
     case "sidecarLogs": {
@@ -1419,6 +1570,17 @@ export function errorFromUnknown(
   if (error instanceof ContractValidationError)
     return structuredError(error.code, error.message, error.details);
   return structuredError(fallbackCode, "The IPC operation failed");
+}
+
+function parseCapabilities(value: unknown): Readonly<Record<string, boolean>> {
+  if (!isRecord(value)) throw invalid(ERROR_CODES.eventRejected, "capabilities must be an object");
+  const result: Record<string, boolean> = {};
+  for (const [key, child] of Object.entries(value)) {
+    if (typeof child !== "boolean")
+      throw invalid(ERROR_CODES.eventRejected, `capability "${key}" must be boolean`);
+    result[key] = child;
+  }
+  return result;
 }
 
 const DENY_NORMALISED = new Set([
@@ -1595,6 +1757,9 @@ export function validateOutboundEvent(value: unknown): DesktopEvent {
       ...(sanitized["setupCommand"] === undefined
         ? {}
         : { setupCommand: requiredString(sanitized["setupCommand"], "setupCommand") }),
+      ...(sanitized["capabilities"] === undefined
+        ? {}
+        : { capabilities: parseCapabilities(sanitized["capabilities"]) }),
     };
   }
   return parseRunEvent(sanitized, "outbound event");

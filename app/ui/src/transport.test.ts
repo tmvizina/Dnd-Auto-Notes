@@ -68,6 +68,14 @@ describe("renderer transport", () => {
       settings: {
         get: async () => ({ ok: false, error: { code: "unavailable", message: "not ready" } }),
         set: async () => ({ ok: false, error: { code: "unavailable", message: "not ready" } }),
+        reveal: async () => ({
+          ok: false,
+          error: { code: "unavailable", message: "not ready" },
+        }),
+        testConnection: async () => ({
+          ok: false,
+          error: { code: "unavailable", message: "not ready" },
+        }),
       },
       sidecar: {
         status: async () => ({ ok: true, value: { status: "ready" } }),
@@ -84,6 +92,13 @@ describe("renderer transport", () => {
       code: "unavailable",
       operation: "sessions.get",
     });
+    await expect(transport.settings.reveal({ key: "sessionsRoot" })).rejects.toMatchObject({
+      code: "unavailable",
+      operation: "settings.reveal",
+    });
+    await expect(
+      transport.settings.testConnection({ baseUrl: "http://127.0.0.1:1234/v1" }),
+    ).rejects.toMatchObject({ code: "unavailable", operation: "settings.testConnection" });
     await expect(
       transport.sessions.copy({
         sessionId: "session-1",

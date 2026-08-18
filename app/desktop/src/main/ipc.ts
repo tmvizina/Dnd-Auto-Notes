@@ -43,6 +43,10 @@ import {
   type SettingsSetRequest,
   type SettingsSetResponse,
   type SettingsGetResponse,
+  type SettingsRevealRequest,
+  type SettingsRevealResponse,
+  type SettingsTestConnectionRequest,
+  type SettingsTestConnectionResponse,
   type SidecarStatusResponse,
   type SidecarLogsRequest,
   type SidecarLogsResponse,
@@ -125,6 +129,14 @@ export interface IpcHandlerMap {
     request: SettingsSetRequest,
     context: IpcHandlerContext,
   ) => SettingsSetResponse | Promise<SettingsSetResponse>;
+  settingsReveal?: (
+    request: SettingsRevealRequest,
+    context: IpcHandlerContext,
+  ) => SettingsRevealResponse | Promise<SettingsRevealResponse>;
+  settingsTestConnection?: (
+    request: SettingsTestConnectionRequest,
+    context: IpcHandlerContext,
+  ) => SettingsTestConnectionResponse | Promise<SettingsTestConnectionResponse>;
   sidecarStatus?: (
     context: IpcHandlerContext,
   ) => SidecarStatusResponse | Promise<SidecarStatusResponse>;
@@ -313,6 +325,14 @@ async function dispatch(
       return handlers.settingsSet === undefined
         ? handlerUnavailable()
         : handlers.settingsSet(request as SettingsSetRequest, context);
+    case "settingsReveal":
+      return handlers.settingsReveal === undefined
+        ? handlerUnavailable()
+        : handlers.settingsReveal(request as SettingsRevealRequest, context);
+    case "settingsTestConnection":
+      return handlers.settingsTestConnection === undefined
+        ? handlerUnavailable()
+        : handlers.settingsTestConnection(request as SettingsTestConnectionRequest, context);
     case "sidecarStatus":
       return handlers.sidecarStatus === undefined
         ? handlerUnavailable()
@@ -338,6 +358,8 @@ const CHANNEL_OPERATIONS: ReadonlyArray<readonly [string, keyof IpcHandlerMap]> 
   [CHANNELS.runs.unsubscribe, "runsUnsubscribe"],
   [CHANNELS.settings.get, "settingsGet"],
   [CHANNELS.settings.set, "settingsSet"],
+  [CHANNELS.settings.reveal, "settingsReveal"],
+  [CHANNELS.settings.testConnection, "settingsTestConnection"],
   [CHANNELS.sidecar.status, "sidecarStatus"],
   [CHANNELS.sidecar.logs, "sidecarLogs"],
 ];

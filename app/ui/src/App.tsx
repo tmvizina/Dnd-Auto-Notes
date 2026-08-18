@@ -6,6 +6,8 @@ import {
   ReviewPage,
   SessionsPage,
   SettingsPage,
+  type SettingsCapabilities,
+  type SettingsPageProps,
   type IntakeCopyProgress,
   type IntakeDropKind,
   type IntakePageProps,
@@ -26,12 +28,18 @@ import {
   type SidecarStatus,
   type SidecarStatusEvent,
 } from "./transport.js";
+import type { SettingKey } from "../../desktop/src/shared/contracts.js";
 
 type SessionsState = "loading" | "ready" | "empty" | "error";
 type SettingsState = "loading" | "ready" | "error";
 type SidecarSnapshot =
-  | SidecarStatus
-  | { readonly status: "unknown"; readonly reason?: string; readonly setupCommand?: string };
+  | (SidecarStatus & { readonly capabilities?: SettingsCapabilities })
+  | {
+      readonly status: "unknown";
+      readonly reason?: string;
+      readonly setupCommand?: string;
+      readonly capabilities?: SettingsCapabilities;
+    };
 
 const BROWSER_SIDECAR: SidecarSnapshot = {
   status: "unknown",
@@ -134,6 +142,12 @@ function pageForRoute(
   settingsState: SettingsState,
   settingsError: string | undefined,
   retrySettings: () => void,
+  settings: NonNullable<SettingsPageProps["settings"]>,
+  settingsCapabilities: SettingsCapabilities | undefined,
+  onSaveSetting: (key: SettingKey, value: string) => Promise<void>,
+  onRevealSettingPath: SettingsPageProps["onRevealPath"],
+  onTestConnection: SettingsPageProps["onTestConnection"],
+  onRerunAttribution: SettingsPageProps["onRerun"],
   onCreate?: (draft: SessionDraft) => Promise<SessionScaffold>,
   onRevealPath?: (path: string) => Promise<void> | void,
   onCopyPath?: (path: string) => Promise<void> | void,
@@ -161,6 +175,12 @@ function pageForRoute(
         <SettingsPage
           {...(settingsError === undefined ? {} : { error: settingsError })}
           onRetry={retrySettings}
+          {...(settingsCapabilities === undefined ? {} : { capabilities: settingsCapabilities })}
+          {...(onRevealSettingPath === undefined ? {} : { onRevealPath: onRevealSettingPath })}
+          {...(onRerunAttribution === undefined ? {} : { onRerun: onRerunAttribution })}
+          onSave={onSaveSetting}
+          {...(onTestConnection === undefined ? {} : { onTestConnection })}
+          settings={settings}
           state={settingsState}
         />
       );
@@ -172,10 +192,39 @@ function isTerminalRunEvent(type: string): boolean {
 }
 
 function sidecarEventSnapshot(event: SidecarStatusEvent): SidecarSnapshot {
+  const capabilities = settingsCapabilitiesFromReport(
+    event.status,
+    event.reason,
+    event.capabilities,
+  );
   return {
     status: event.status,
     ...(event.reason === undefined ? {} : { reason: event.reason }),
     ...(event.setupCommand === undefined ? {} : { setupCommand: event.setupCommand }),
+    ...(capabilities === undefined ? {} : { capabilities }),
+  };
+}
+
+function settingsCapabilitiesFromReport(
+  status: SidecarStatusEvent["status"],
+  reason: string | undefined,
+  capabilities: Readonly<Record<string, boolean>> | undefined,
+): SettingsCapabilities | undefined {
+  if (capabilities === undefined) return undefined;
+  return {
+    available: status === "ready",
+    ...(reason === undefined ? {} : { reason }),
+    asrBackends: {
+      auto:
+        capabilities["mlx_whisper"] === true ||
+        capabilities["faster_whisper"] === true ||
+        capabilities["whisper_cpp"] === true ||
+        capabilities["fake_asr"] === true,
+      "mlx-whisper": capabilities["mlx_whisper"] === true,
+      "faster-whisper": capabilities["faster_whisper"] === true,
+      "whisper.cpp": capabilities["whisper_cpp"] === true,
+      fake: capabilities["fake_asr"] === true,
+    },
   };
 }
 
@@ -194,6 +243,7 @@ export function App({
   const [selectedSession, setSelectedSession] = useState<SessionSummary | null>(null);
   const [settingsState, setSettingsState] = useState<SettingsState>("loading");
   const [settingsError, setSettingsError] = useState<string>();
+  const [settings, setSettings] = useState<NonNullable<SettingsPageProps["settings"]>>({});
   const [provider, setProvider] = useState<ProviderStatus>("unavailable");
   const [sidecar, setSidecar] = useState<SidecarSnapshot>(
     transport.kind === "browser" ? BROWSER_SIDECAR : { status: "stopped" },
@@ -256,6 +306,7 @@ export function App({
     setSettingsError(undefined);
     try {
       const response = await transport.settings.get();
+      setSettings(response.settings);
       setProvider(response.settings.provider === undefined ? "not-configured" : "available");
       setSettingsState("ready");
     } catch (error) {
@@ -268,10 +319,16 @@ export function App({
   const loadSidecar = useCallback(async () => {
     try {
       const response = await transport.sidecar.status();
+      const capabilities = settingsCapabilitiesFromReport(
+        response.status,
+        response.reason,
+        response.capabilities,
+      );
       setSidecar({
         status: response.status,
         ...(response.reason === undefined ? {} : { reason: response.reason }),
         ...(response.setupCommand === undefined ? {} : { setupCommand: response.setupCommand }),
+        ...(capabilities === undefined ? {} : { capabilities }),
       });
     } catch (error) {
       if (!isUnavailableOperation(error)) {
@@ -279,6 +336,39 @@ export function App({
       }
     }
   }, [transport]);
+
+  const saveSetting = useCallback(
+    async (key: SettingKey, value: string): Promise<void> => {
+      const response = await transport.settings.set({ key, value });
+      setSettings((current) => ({ ...current, [response.key]: response.value }));
+      if (response.key === "provider")
+        setProvider(response.value === "none" ? "not-configured" : "available");
+    },
+    [transport],
+  );
+
+  const revealSettingPath = useCallback<NonNullable<SettingsPageProps["onRevealPath"]>>(
+    async (key) => {
+      const response = await transport.settings.reveal({ key });
+      return response.revealed;
+    },
+    [transport],
+  );
+
+  const testSettingsConnection = useCallback<NonNullable<SettingsPageProps["onTestConnection"]>>(
+    (request) => transport.settings.testConnection(request),
+    [transport],
+  );
+
+  const rerunAttribution = useCallback<NonNullable<SettingsPageProps["onRerun"]>>(async () => {
+    if (selectedSession === null)
+      throw new Error("Choose a session before re-running attribution.");
+    await transport.pipeline.run({
+      sessionId: selectedSession.sessionId,
+      stages: ["persona"],
+      force: true,
+    });
+  }, [selectedSession, transport]);
 
   const selectSession = useCallback(
     (session: SessionSummary): void => {
@@ -416,7 +506,12 @@ export function App({
 
     const onEvent = (event: DesktopEvent): void => {
       if (event.type === "sidecar_status") {
-        setSidecar(sidecarEventSnapshot(event));
+        const snapshot = sidecarEventSnapshot(event);
+        setSidecar((current) =>
+          snapshot.capabilities === undefined && current.capabilities !== undefined
+            ? { ...snapshot, capabilities: current.capabilities }
+            : snapshot,
+        );
         return;
       }
       if (event.type === "copy_progress") {
@@ -520,6 +615,12 @@ export function App({
         settingsState,
         settingsError,
         loadSettings,
+        settings,
+        sidecar.capabilities,
+        saveSetting,
+        revealSettingPath,
+        testSettingsConnection,
+        rerunAttribution,
         createSession,
         revealPath,
       )

@@ -139,6 +139,43 @@ describe("main IPC boundary", () => {
     expect(result).toMatchObject({ ok: false, error: { code: "settings_key_not_allowed" } });
   });
 
+  it("dispatches settings reveal and connection tests through the same boundary", async () => {
+    const ipc = new FakeIpcMain();
+    registerIpcHandlers({
+      expectedSenderId: 7,
+      expectedOrigin: "dnd-auto-notes://app",
+      expectedFrameUrl: "dnd-auto-notes://app/index.html",
+      ipcMain: ipc,
+      handlers: {
+        settingsReveal: ({ key }) => ({ key: key as "sessionsRoot", revealed: true }),
+        settingsTestConnection: async ({ baseUrl }) => ({
+          ok: true,
+          latencyMs: 9,
+          models: [baseUrl],
+          message: "Connected",
+        }),
+      },
+    });
+    await expect(
+      ipc.call(CHANNELS.settings.reveal, trustedEvent(), success({ key: "sessionsRoot" })),
+    ).resolves.toEqual({ ok: true, value: { key: "sessionsRoot", revealed: true } });
+    await expect(
+      ipc.call(
+        CHANNELS.settings.testConnection,
+        trustedEvent(),
+        success({ baseUrl: "http://127.0.0.1:1234/v1" }),
+      ),
+    ).resolves.toEqual({
+      ok: true,
+      value: {
+        ok: true,
+        latencyMs: 9,
+        models: ["http://127.0.0.1:1234/v1"],
+        message: "Connected",
+      },
+    });
+  });
+
   it("enforces request and response byte caps at the main boundary", async () => {
     const ipc = new FakeIpcMain();
     let settingsWrites = 0;

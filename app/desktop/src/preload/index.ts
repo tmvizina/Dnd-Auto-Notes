@@ -38,6 +38,10 @@ import {
   type SettingsSetRequest,
   type SettingsSetResponse,
   type SettingsGetResponse,
+  type SettingsRevealRequest,
+  type SettingsRevealResponse,
+  type SettingsTestConnectionRequest,
+  type SettingsTestConnectionResponse,
   type SidecarStatusResponse,
   type SidecarStatusEvent,
   type SidecarLogsRequest,
@@ -88,6 +92,12 @@ export interface DesktopBridge {
   readonly settings: {
     readonly get: () => Promise<IpcEnvelope<SettingsGetResponse>>;
     readonly set: (request: SettingsSetRequest) => Promise<IpcEnvelope<SettingsSetResponse>>;
+    readonly reveal: (
+      request: SettingsRevealRequest,
+    ) => Promise<IpcEnvelope<SettingsRevealResponse>>;
+    readonly testConnection: (
+      request: SettingsTestConnectionRequest,
+    ) => Promise<IpcEnvelope<SettingsTestConnectionResponse>>;
   };
   readonly sidecar: {
     readonly status: () => Promise<IpcEnvelope<SidecarStatusResponse>>;
@@ -222,6 +232,18 @@ export function buildBridge(renderer: IpcRendererLike): DesktopBridge {
         invoke<Record<string, never>, SettingsGetResponse>(renderer, CHANNELS.settings.get, {}),
       set: (request) =>
         invoke<SettingsSetRequest, SettingsSetResponse>(renderer, CHANNELS.settings.set, request),
+      reveal: (request) =>
+        invoke<SettingsRevealRequest, SettingsRevealResponse>(
+          renderer,
+          CHANNELS.settings.reveal,
+          request,
+        ),
+      testConnection: (request) =>
+        invoke<SettingsTestConnectionRequest, SettingsTestConnectionResponse>(
+          renderer,
+          CHANNELS.settings.testConnection,
+          request,
+        ),
     },
     sidecar: {
       status: () =>

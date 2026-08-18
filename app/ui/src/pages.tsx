@@ -19,6 +19,8 @@ export type {
   MappingSuggestion,
 } from "./pages/Intake.js";
 export { decisionsForSuggestions, isMappingCode, orderQaEntries } from "./pages/Intake.js";
+export { SettingsPage } from "./pages/Settings.js";
+export type { SettingsCapabilities, SettingsPageProps } from "./pages/Settings.js";
 
 export function ReviewPage({ hasSession }: { readonly hasSession: boolean }): ReactNode {
   return (
@@ -58,61 +60,6 @@ export function NotesPage({ hasSession }: { readonly hasSession: boolean }): Rea
         }
         title={hasSession ? "Notes are not processed yet" : "No session selected"}
       />
-    </div>
-  );
-}
-
-export function SettingsPage({
-  state,
-  error,
-  onRetry,
-}: {
-  readonly state: "loading" | "ready" | "error";
-  readonly error?: string;
-  readonly onRetry: () => void;
-}): ReactNode {
-  return (
-    <div className="page-content">
-      <PageIntro
-        description="Keep provider choices and local paths explicit and under your control."
-        kicker="Application"
-        title="Settings"
-      />
-      {state === "loading" ? (
-        <StatePanel
-          kind="loading"
-          message="Reading local configuration..."
-          title="Loading settings"
-        />
-      ) : state === "error" ? (
-        <StatePanel
-          action={
-            <button className="button button--secondary" onClick={onRetry} type="button">
-              Try again
-            </button>
-          }
-          kind="error"
-          message={error ?? "Settings are unavailable."}
-          title="Settings are unavailable"
-        />
-      ) : (
-        <section className="settings-card">
-          <div className="settings-card__row">
-            <div>
-              <strong>Local-first mode</strong>
-              <p>Nothing leaves this workspace unless you explicitly configure a provider.</p>
-            </div>
-            <span className="badge badge--good">On</span>
-          </div>
-          <div className="settings-card__row">
-            <div>
-              <strong>Provider</strong>
-              <p>Provider configuration is managed by the desktop setup.</p>
-            </div>
-            <span className="badge">Read-only</span>
-          </div>
-        </section>
-      )}
     </div>
   );
 }

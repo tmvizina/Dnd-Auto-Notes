@@ -1,6 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { dirname, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { app, BrowserWindow, session, shell } from "electron";
 import { registerIpcHandlers, sendOutboundEvent, type IpcHandlerMap } from "./ipc.js";
@@ -11,6 +11,12 @@ import {
   runSessionIntake,
   type SessionHandlers,
 } from "./handlers/sessions.js";
+import {
+  asIpcSettingsHandlers,
+  createSettingsHandlers,
+  type SettingsMap,
+  type SettingsHandlers,
+} from "./handlers/settings.js";
 import { getUiRoot, getUserDataPaths, type DesktopUserDataPaths } from "./paths.js";
 import { DesktopSidecarSupervisor, type SidecarState } from "./sidecar/index.js";
 import { structuredError, type DesktopEvent, type RunEvent } from "../shared/contracts.js";
@@ -30,6 +36,8 @@ let quitStopPromise: Promise<void> | null = null;
 let quitRequested = false;
 let sessionHandlers: SessionHandlers | null = null;
 let desktopPaths: DesktopUserDataPaths | null = null;
+let settingsHandlers: SettingsHandlers | null = null;
+let runtimeSettings: SettingsMap = {};
 const mainDirectory = dirname(fileURLToPath(import.meta.url));
 
 function localDevUrl(): string | null {
@@ -135,24 +143,64 @@ export function createQuitStopper(
   };
 }
 
-function setupSidecar(paths: DesktopUserDataPaths): void {
+export function sidecarRepoRootForSetting(
+  configuredPath: string | undefined,
+  fallback: string,
+): string {
+  if (configuredPath === undefined || configuredPath.trim() === "") return fallback;
+  const configured = resolve(configuredPath);
+  return basename(configured).toLowerCase() === "sidecar" ? dirname(configured) : configured;
+}
+
+export function runtimeRootsForSettings(
+  settings: SettingsMap,
+  defaults: Readonly<{
+    readonly sessionsRoot: string;
+    readonly campaignRoot: string;
+    readonly sidecarRepoRoot: string;
+  }>,
+): {
+  readonly sessionsRoot: string;
+  readonly campaignRoot: string;
+  readonly sidecarRepoRoot: string;
+} {
+  return {
+    sessionsRoot: settings.sessionsRoot ?? defaults.sessionsRoot,
+    campaignRoot: settings.campaignRoot ?? defaults.campaignRoot,
+    sidecarRepoRoot: sidecarRepoRootForSetting(settings.sidecarPath, defaults.sidecarRepoRoot),
+  };
+}
+
+function setupSidecar(paths: DesktopUserDataPaths, settings: SettingsMap): void {
+  const roots = runtimeRootsForSettings(settings, {
+    sessionsRoot: paths.sessions,
+    campaignRoot: campaignRootForDesktop(settings),
+    sidecarRepoRoot: desktopRepoRoot(),
+  });
   sidecar = new DesktopSidecarSupervisor({
-    repoRoot: desktopRepoRoot(),
+    repoRoot: roots.sidecarRepoRoot,
     stateDir: paths.userData,
     logDir: paths.logs,
   });
   sidecar.onState(handleSidecarState, false);
 }
 
-function campaignRootForDesktop(): string {
-  return process.env["DND_CAMPAIGN_ROOT"] ?? join(desktopRepoRoot(), "campaign");
+function campaignRootForDesktop(settings: SettingsMap = runtimeSettings): string {
+  return (
+    settings.campaignRoot ?? process.env["DND_CAMPAIGN_ROOT"] ?? join(desktopRepoRoot(), "campaign")
+  );
 }
 
-function setupSessionHandlers(paths: DesktopUserDataPaths): void {
-  sessionHandlers = createSessionHandlers({
+function setupSessionHandlers(paths: DesktopUserDataPaths, settings: SettingsMap): void {
+  const roots = runtimeRootsForSettings(settings, {
     sessionsRoot: paths.sessions,
+    campaignRoot: campaignRootForDesktop(settings),
+    sidecarRepoRoot: desktopRepoRoot(),
+  });
+  sessionHandlers = createSessionHandlers({
+    sessionsRoot: roots.sessionsRoot,
     databasePath: join(paths.data, "notes.db"),
-    campaignRoot: campaignRootForDesktop(),
+    campaignRoot: roots.campaignRoot,
     emitCopyProgress: (event) => {
       if (mainWindow !== null)
         sendOutboundEvent(mainWindow.webContents, {
@@ -166,6 +214,18 @@ function setupSessionHandlers(paths: DesktopUserDataPaths): void {
       return true;
     },
   });
+}
+
+async function setupSettingsHandlers(paths: DesktopUserDataPaths): Promise<SettingsMap> {
+  settingsHandlers = createSettingsHandlers({
+    settingsPath: join(paths.data, "settings.json"),
+    revealPath: async (path) => {
+      const failure = await shell.openPath(path);
+      if (failure !== "") throw new Error(failure);
+      return true;
+    },
+  });
+  return (await settingsHandlers.settingsGet()).settings;
 }
 
 interface PipelineRuntimeOptions {
@@ -250,16 +310,29 @@ function startPipelineRun(
 }
 
 export function createSidecarHandlers(
-  supervisor: Pick<DesktopSidecarSupervisor, "state" | "ensureRunning" | "getLogTail">,
+  supervisor: Pick<DesktopSidecarSupervisor, "state" | "ensureRunning" | "getLogTail"> & {
+    readonly client?: () => {
+      readonly health: () => Promise<{ readonly capabilities?: Readonly<Record<string, boolean>> }>;
+    };
+  },
   pipelineOptions?: PipelineRuntimeOptions,
 ): IpcHandlerMap {
   return {
-    sidecarStatus: () => {
+    sidecarStatus: async () => {
       const state = supervisor.state;
+      let capabilities: Readonly<Record<string, boolean>> | undefined;
+      if (state.status === "ready" && supervisor.client !== undefined) {
+        try {
+          capabilities = (await supervisor.client().health()).capabilities;
+        } catch {
+          // The status still remains useful when a health refresh races a restart.
+        }
+      }
       return {
         status: state.status,
         ...(state.reason === undefined ? {} : { reason: state.reason }),
         ...(state.setupCommand === undefined ? {} : { setupCommand: state.setupCommand }),
+        ...(capabilities === undefined ? {} : { capabilities }),
       };
     },
     sidecarLogs: async ({ maxLines }: { maxLines?: number }) => ({
@@ -286,14 +359,15 @@ export function createSidecarHandlers(
 
 function sidecarHandlers(): IpcHandlerMap {
   const sessions = sessionHandlers === null ? {} : asIpcSessionHandlers(sessionHandlers);
+  const settings = settingsHandlers === null ? {} : asIpcSettingsHandlers(settingsHandlers);
   const pipeline =
     sidecar === null || desktopPaths === null
       ? {}
       : createSidecarHandlers(sidecar, {
-          sessionsRoot: desktopPaths.sessions,
+          sessionsRoot: runtimeSettings.sessionsRoot ?? desktopPaths.sessions,
           campaignRoot: campaignRootForDesktop(),
         });
-  return { ...sessions, ...pipeline };
+  return { ...sessions, ...settings, ...pipeline };
 }
 
 function installNetworkBlock(): void {
@@ -422,11 +496,13 @@ if (!hasSingleInstanceLock) {
 
   void app
     .whenReady()
-    .then(() => {
+    .then(async () => {
       const paths = configureUserDataPaths();
       desktopPaths = paths;
-      setupSidecar(paths);
-      setupSessionHandlers(paths);
+      const settings = await setupSettingsHandlers(paths);
+      runtimeSettings = settings;
+      setupSidecar(paths, settings);
+      setupSessionHandlers(paths, settings);
       installNetworkBlock();
       console.error(`[desktop] userData=${paths.userData}`);
       void createMainWindow();
