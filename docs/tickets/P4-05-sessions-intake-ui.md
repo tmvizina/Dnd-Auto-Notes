@@ -2,7 +2,7 @@
 id: P4-05
 phase: 4
 title: Sessions list and intake UI
-status: in_progress
+status: done
 assignee: "luna-p4-05"
 depends_on: [P4-03, P1-09]
 scope:
@@ -25,7 +25,7 @@ scope:
   - app/desktop/src/main/main.ts
   - app/desktop/src/main/main.test.ts
 estimate: M
-commit: ""
+commit: "c3ab684"
 ---
 
 ## Why
@@ -43,9 +43,9 @@ This is the front door: pick a past session to read, or start a new one. The int
 
 ## Acceptance
 
-- [ ] The list reflects the folder state, including sessions created outside the app.
-- [ ] Creating a session scaffolds the folder and shows the drop paths.
-- [ ] Drag-and-drop of a 2 GB file shows progress and does not freeze the UI.
-- [ ] QA errors render with hints and link to the mapping editor.
-- [ ] Mapping edits write the registry and re-running intake clears the error.
-- [ ] A missing input produces a clear message, never a stack trace.
+- [x] The list reflects the folder state, including sessions created outside the app.
+- [x] Creating a session scaffolds the folder and shows the drop paths.
+- [x] Drag-and-drop of a 2 GB file shows progress and does not freeze the UI.
+- [x] QA errors render with hints and link to the mapping editor.
+- [x] Mapping edits write the registry and re-running intake clears the error.
+- [x] A missing input produces a clear message, never a stack trace.
