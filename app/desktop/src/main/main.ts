@@ -2,6 +2,7 @@ import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { app, BrowserWindow, session } from "electron";
+import { registerIpcHandlers } from "./ipc.js";
 import { getUiRoot, getUserDataPaths, type DesktopUserDataPaths } from "./paths.js";
 import { createUiUrl, isAllowedUiUrl, registerUiProtocol, registerUiScheme } from "./uiProtocol.js";
 
@@ -10,6 +11,8 @@ const UI_ORIGIN_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
 let mainWindow: BrowserWindow | null = null;
 let rendererOrigin: string | undefined;
+let rendererUrl: string | undefined;
+let removeIpcHandlers: (() => void) | null = null;
 let networkBlockInstalled = false;
 const mainDirectory = dirname(fileURLToPath(import.meta.url));
 
@@ -80,13 +83,27 @@ async function loadRenderer(window: BrowserWindow, uiRoot: string): Promise<void
   const devUrl = app.isPackaged ? null : localDevUrl();
   if (devUrl) {
     rendererOrigin = new URL(devUrl).origin;
+    rendererUrl = devUrl;
+    removeIpcHandlers?.();
+    removeIpcHandlers = registerIpcHandlers({
+      expectedSenderId: window.webContents.id,
+      expectedOrigin: () => rendererOrigin ?? "",
+      expectedFrameUrl: () => rendererUrl ?? "",
+    });
     await window.loadURL(devUrl);
     return;
   }
 
   rendererOrigin = "dnd-auto-notes://app";
   registerUiProtocol(uiRoot);
-  await window.loadURL(createUiUrl(`index.html?version=${encodeURIComponent(app.getVersion())}`));
+  rendererUrl = createUiUrl(`index.html?version=${encodeURIComponent(app.getVersion())}`);
+  removeIpcHandlers?.();
+  removeIpcHandlers = registerIpcHandlers({
+    expectedSenderId: window.webContents.id,
+    expectedOrigin: () => rendererOrigin ?? "",
+    expectedFrameUrl: () => rendererUrl ?? "",
+  });
+  await window.loadURL(rendererUrl);
 }
 
 export async function createMainWindow(): Promise<BrowserWindow> {
@@ -119,7 +136,11 @@ export async function createMainWindow(): Promise<BrowserWindow> {
   );
   window.once("ready-to-show", () => window.show());
   window.on("closed", () => {
-    if (mainWindow === window) mainWindow = null;
+    if (mainWindow === window) {
+      mainWindow = null;
+      removeIpcHandlers?.();
+      removeIpcHandlers = null;
+    }
   });
 
   mainWindow = window;

@@ -2,12 +2,14 @@
 id: P4-02
 phase: 4
 title: IPC contracts and validation
-status: todo
-assignee: ""
+status: approved
+assignee: "orchestrator"
 depends_on: [P4-01]
 scope:
   - app/desktop/src/shared/**
   - app/desktop/src/main/ipc.ts
+  - app/desktop/src/main/ipc.test.ts
+  - app/desktop/src/main/main.ts
   - app/desktop/src/preload/**
 estimate: M
 commit: ""
@@ -28,9 +30,9 @@ The preload bridge is the only hole in the sandbox. Every payload crossing it is
 
 ## Acceptance
 
-- [ ] Every channel name comes from the frozen contract; a grep finds no literal channel strings elsewhere.
-- [ ] An unknown request field is rejected.
-- [ ] A forged sender or frame URL is rejected.
-- [ ] Sanitisation removes every field on the deny list, proven by a test over a synthetic event with all of them.
-- [ ] Cyclic or over-deep payloads fail safely.
-- [ ] A rejected write of a non-allow-listed settings key returns a structured error.
+- [x] Every channel name comes from the frozen contract; a grep finds no literal channel strings elsewhere.
+- [x] An unknown request field is rejected.
+- [x] A forged sender or frame URL is rejected.
+- [x] Sanitisation removes every field on the deny list, proven by a test over a synthetic event with all of them.
+- [x] Cyclic or over-deep payloads fail safely.
+- [x] A rejected write of a non-allow-listed settings key returns a structured error.
