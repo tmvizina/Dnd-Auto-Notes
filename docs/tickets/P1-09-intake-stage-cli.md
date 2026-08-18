@@ -2,7 +2,7 @@
 id: P1-09
 phase: 1
 title: Intake stage and the pipeline CLI
-status: in_progress
+status: done
 assignee: "luna-p1-09"
 depends_on: [P1-03, P1-05, P1-06, P1-07, P1-08]
 scope:
@@ -14,7 +14,7 @@ scope:
   - packages/core/src/index.ts
   - packages/cli/src/**
 estimate: M
-commit: ""
+commit: "ee50c13"
 ---
 
 ## Why
@@ -36,12 +36,12 @@ This is the first end-to-end path: two dropped files become a validated manifest
 
 ## Acceptance
 
-- [ ] `pipeline session new` then `pipeline run --stage intake` on the synthetic fixture produces a valid manifest.
-- [ ] A second identical run reports `skipped` for intake and finishes in under a second.
-- [ ] `--force` re-runs it.
-- [ ] The `--with-defects` fixture exits 2 and names all three defects.
-- [ ] `--json` emits parseable NDJSON with one terminal event.
-- [ ] The CLI works from any working directory.
+- [x] `pipeline session new` then `pipeline run --stage intake` on the synthetic fixture produces a valid manifest.
+- [x] A second identical run reports `skipped` for intake and finishes in under a second.
+- [x] `--force` re-runs it.
+- [x] The `--with-defects` fixture exits 2 and names all three defects.
+- [x] `--json` emits parseable NDJSON with one terminal event.
+- [x] The CLI works from any working directory.
 
 ## Verify
 

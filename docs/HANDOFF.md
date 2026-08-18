@@ -6,11 +6,11 @@ The living state of the build. The orchestrator appends to this after every inte
 
 **Phase 0 is complete** and **phase 1 is over half done.** `P0-01`, `P0-02`, `P0-04`, `P0-05` and `P0-06` are done; `P0-03` (CI) is written and locally verified but **blocked** — its acceptance is a green CI run, which needs a push.
 
-In phase 1, `P1-01` through `P1-08` are done. `P1-09` (intake stage + CLI) is now ready.
+In phase 1, `P1-01` through `P1-09` are done. `P1-10` (intake QA report) is now ready.
 
 In phase 4, `P4-01`, `P4-02` and `P4-04` are done: the secure Electron shell, validated IPC boundary and demand-driven sidecar supervision are in place. `P4-03` is ready but is serialized behind active work because its package-lock scope conservatively overlaps every ticket.
 
-The committed repo builds, typechecks, tests and lints clean: 345 TypeScript tests and 40 Python tests after P4-04 over the combined P4-04/P1-09 worktree; `npm run tickets -- --check` is green across all 52 tickets.
+The committed repo builds, typechecks, tests and lints clean: 357 TypeScript tests and 40 Python tests after P1-09; `npm run tickets -- --check` is green across all 52 tickets.
 
 In place:
 
@@ -62,6 +62,7 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 | `5b0dbd9` | `P4-02` | Validated desktop IPC contracts and preload bridge | 21 focused IPC tests passed; the combined full gate passed 318 TS tests and 40 Python tests plus typecheck/lint/format. Sender/document identity, envelopes, request/response byte caps, channel literals, recursive sanitization, stack removal, settings allow-list and main-process registration were verified. No blocker remains. |
 | `5dd325b` | `P1-06` | Roll20 timestamp recovery and evidence spike | 7 focused tests passed; independent review passed after the resolver was exported through the public Roll20 barrel. The combined full gate passed 331 TS tests and 40 Python tests plus typecheck/lint/format. Real archive evidence showed all 98 ids decodable but one backward step across a multi-session capture, so that capture honestly downgrades to `order_only`. |
 | `f235a15` | `P4-04` | Demand-driven desktop sidecar supervision | Independent review passed after proving startup/restart shutdown races cannot orphan late-owned children. Focused review covered 49 tests; the combined full gate passed 345 TS tests and 40 Python tests plus typecheck/lint/format. Missing environments expose a validated setup command without installing, retries cap, adopted processes survive quit, logs are bounded, and accepted runs receive clear failure events. |
+| `ee50c13` | `P1-09` | Canonical intake stage and pipeline CLI | Independent review passed after mapped and unmapped Roll20 rolls were persisted in the validated manifest, the duplicate CLI intake implementation was removed, and stage progress reached TTY/NDJSON output. 23 focused tests and the full 357 TS/40 Python gate passed with typecheck, build, lint and format. Skip completed under one second; force, defects, status, QA, latest and arbitrary-cwd paths were exercised. |
 
 ## Known risks
 
@@ -75,8 +76,8 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 
 Track A (audio) and track C (persistence) are finished. What remains in phase 1 is the Roll20 chain and the two tickets that consume everything:
 
-1. **`P1-09`** (intake stage + CLI) is ready now.
-2. **`P1-10`** (QA report) follows intake.
+1. **`P1-10`** (QA report) is ready now; read the carried items below before implementation.
+2. **`P4-03`** (renderer transport and shell) is also ready and can start once no other ticket is active because its package-lock scope is conservatively global.
 
 `P4-03` (renderer transport and shell) is ready and can proceed in parallel.
 
