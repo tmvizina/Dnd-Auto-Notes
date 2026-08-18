@@ -2,11 +2,12 @@
 id: P2-04
 phase: 2
 title: Utterance embeddings and prosody features
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p2-04"
 depends_on: [P2-03]
 scope:
   - sidecar/dnd_sidecar/features.py
+  - sidecar/dnd_sidecar/server.py
   - sidecar/tests/test_features.py
   - packages/core/src/stages/features.ts
 estimate: M
