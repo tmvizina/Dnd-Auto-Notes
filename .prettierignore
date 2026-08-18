@@ -1,0 +1,8 @@
+dist
+node_modules
+.venv
+package-lock.json
+sessions
+*.tsbuildinfo
+.pytest_cache/
+__pycache__/

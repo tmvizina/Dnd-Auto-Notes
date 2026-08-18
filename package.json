@@ -20,15 +20,23 @@
     "lint": "eslint .",
     "pipeline": "npm run --silent start --workspace @dnd/cli --",
     "session:new": "npm run --silent start --workspace @dnd/cli -- session new",
+    "sidecar:setup": "node tools/setup-sidecar.mjs",
     "test": "vitest run --config vitest.config.mjs",
     "test:all": "npm run test && npm run test:py",
-    "test:py": "echo \"sidecar tests land in P0-02\" && exit 0",
+    "test:py": "node tools/run-pytest.mjs",
     "tickets": "node tools/tickets.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },
   "devDependencies": {
     "@dnd/cli": "*",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.10.5",
-    "typescript": "^5.7.3"
+    "eslint": "^10.8.1",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.11.0",
+    "prettier": "^3.9.6",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^4.1.10"
   }
 }

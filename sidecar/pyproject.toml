@@ -1,0 +1,47 @@
+[project]
+name = "dnd-sidecar"
+version = "0.0.0"
+description = "ASR, VAD, embedding and audio-adjudication sidecar for D&D Auto Notes."
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.110",
+  "uvicorn>=0.29",
+  "pydantic>=2.5",
+  "numpy>=1.26",
+  "soundfile>=0.12",
+]
+
+# The model stack is intentionally NOT installed by default. The sidecar must
+# import and start on a machine with no models so the whole pipeline stays
+# testable offline; every model-backed endpoint checks its capability at call
+# time and fails with an actionable message instead of at import.
+#
+# Install per platform, then restart the sidecar:
+#
+#   mlx-whisper>=0.4        Apple Silicon ASR (Metal). The M1 Max path.
+#   faster-whisper>=1.0     CTranslate2 ASR, CPU/CUDA. The Windows and CI path.
+#   torch>=2.5              Required by speechbrain and pyannote. Match your CUDA
+#                           from pytorch.org first; do not let pip choose.
+#   speechbrain>=1.0        ECAPA-TDNN speaker embeddings (P2-04).
+#   pyannote.audio>=3.1     Optional diarisation. GATED: accept the terms for
+#                           pyannote/segmentation-3.0 AND speaker-diarization-3.1
+#                           on huggingface.co, then set HF_TOKEN.
+#   silero-vad              Preferred VAD (P2-01); an energy fallback ships in-tree.
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "httpx>=0.27", "ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["dnd_sidecar"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
