@@ -2,8 +2,8 @@
 id: P3-02
 phase: 3
 title: Beat segmentation
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p3-02"
 depends_on: [P3-01]
 scope:
   - packages/core/src/outline/beats.ts

@@ -3,7 +3,7 @@
 Single-page status snapshot for the full backlog. Ticket frontmatter remains authoritative; update this file whenever a ticket changes status or records its implementation commit.
 
 **Last updated:** 2026-08-18
-**Overall:** 33 done, 1 in progress, 1 blocked, 17 todo - 52 total (63.5% done)
+**Overall:** 33 done, 2 in progress, 1 blocked, 16 todo - 52 total (63.5% done)
 
 ## Phase 0 — Foundations
 
@@ -50,16 +50,16 @@ Single-page status snapshot for the full backlog. Ticket frontmatter remains aut
 
 ## Phase 3 — Outline and notes
 
-| Ticket                                        | Status | Assignee   | Commit    | Title                             |
-| --------------------------------------------- | ------ | ---------- | --------- | --------------------------------- |
-| [P3-01](tickets/P3-01-event-model.md)         | done   | luna-p3-01 | `6111324` | Event model and timeline assembly |
-| [P3-02](tickets/P3-02-beat-segmentation.md)   | todo   | —          | —         | Beat segmentation                 |
-| [P3-03](tickets/P3-03-encounters.md)          | todo   | —          | —         | Combat encounter reconstruction   |
-| [P3-04](tickets/P3-04-checks-social.md)       | todo   | —          | —         | Skill checks and social scenes    |
-| [P3-05](tickets/P3-05-action-descriptions.md) | todo   | —          | —         | Action description extraction     |
-| [P3-06](tickets/P3-06-notes-renderer.md)      | todo   | —          | —         | Notes renderer                    |
-| [P3-07](tickets/P3-07-llm-prose-pass.md)      | todo   | —          | —         | Grounded LLM prose pass           |
-| [P3-08](tickets/P3-08-session-qa.md)          | todo   | —          | —         | Session QA report and notes stage |
+| Ticket                                        | Status      | Assignee   | Commit    | Title                             |
+| --------------------------------------------- | ----------- | ---------- | --------- | --------------------------------- |
+| [P3-01](tickets/P3-01-event-model.md)         | done        | luna-p3-01 | `6111324` | Event model and timeline assembly |
+| [P3-02](tickets/P3-02-beat-segmentation.md)   | in_progress | luna-p3-02 | -         | Beat segmentation                 |
+| [P3-03](tickets/P3-03-encounters.md)          | todo        | —          | —         | Combat encounter reconstruction   |
+| [P3-04](tickets/P3-04-checks-social.md)       | todo        | —          | —         | Skill checks and social scenes    |
+| [P3-05](tickets/P3-05-action-descriptions.md) | todo        | —          | —         | Action description extraction     |
+| [P3-06](tickets/P3-06-notes-renderer.md)      | todo        | —          | —         | Notes renderer                    |
+| [P3-07](tickets/P3-07-llm-prose-pass.md)      | todo        | —          | —         | Grounded LLM prose pass           |
+| [P3-08](tickets/P3-08-session-qa.md)          | todo        | —          | —         | Session QA report and notes stage |
 
 ## Phase 4 — Desktop app
 
