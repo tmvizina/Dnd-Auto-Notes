@@ -2,14 +2,14 @@
 id: P1-07
 phase: 1
 title: Campaign registry and identity mapping
-status: approved
+status: done
 assignee: "orchestrator"
 depends_on: [P0-06]
 scope:
   - packages/core/src/campaign/**
   - campaign/README.md
 estimate: M
-commit: ""
+commit: "0223f88"
 ---
 
 ## Why
