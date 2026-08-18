@@ -2,8 +2,8 @@
 id: P4-08
 phase: 4
 title: Flagged-span review page
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p4-08"
 depends_on: [P4-06, P2-08]
 scope:
   - app/ui/src/pages/Review.tsx
