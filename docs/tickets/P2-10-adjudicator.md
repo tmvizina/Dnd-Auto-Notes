@@ -2,8 +2,8 @@
 id: P2-10
 phase: 2
 title: Adjudicator interface and providers
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p2-10"
 depends_on: [P2-07]
 scope:
   - packages/core/src/llm/**

@@ -3,7 +3,7 @@
 Single-page status snapshot for the full backlog. Ticket frontmatter remains authoritative; update this file whenever a ticket changes status or records its implementation commit.
 
 **Last updated:** 2026-08-18
-**Overall:** 30 done, 1 in progress, 1 blocked, 20 todo - 52 total (57.7% done)
+**Overall:** 30 done, 2 in progress, 1 blocked, 19 todo - 52 total (57.7% done)
 
 ## Phase 0 — Foundations
 
@@ -44,7 +44,7 @@ Single-page status snapshot for the full backlog. Ticket frontmatter remains aut
 | [P2-07](tickets/P2-07-persona-scorer.md)       | done        | luna-p2-07 | `53988c0` | Persona scorer and flagging                     |
 | [P2-08](tickets/P2-08-dm-npc.md)               | in_progress | luna-p2-08 | -         | DM-to-NPC assignment                            |
 | [P2-09](tickets/P2-09-roll-speech-align.md)    | done        | luna-p2-09 | `45041cc` | Roll-to-speech time anchoring                   |
-| [P2-10](tickets/P2-10-adjudicator.md)          | todo        | —          | —         | Adjudicator interface and providers             |
+| [P2-10](tickets/P2-10-adjudicator.md)          | in_progress | luna-p2-10 | -         | Adjudicator interface and providers             |
 | [P2-11](tickets/P2-11-audio-adjudicator.md)    | todo        | —          | —         | Audio-native adjudicator                        |
 | [P2-12](tickets/P2-12-labeling-calibration.md) | todo        | —          | —         | Labeling CLI and calibration                    |
 
