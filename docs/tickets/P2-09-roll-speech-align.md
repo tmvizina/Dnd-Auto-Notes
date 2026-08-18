@@ -2,14 +2,14 @@
 id: P2-09
 phase: 2
 title: Roll to speech time anchoring
-status: in_progress
+status: done
 assignee: "luna-p2-09"
 depends_on: [P2-03, P1-06]
 scope:
   - packages/core/src/align/**
   - packages/core/src/stages/align.ts
 estimate: L
-commit: ""
+commit: "45041cc"
 ---
 
 ## Why
@@ -32,9 +32,9 @@ Rolls carry the mechanical truth of the session and speech carries the narrative
 
 ## Acceptance
 
-- [ ] On the fixture, rolls anchor to the utterances that announce them, matching `truth.json`.
-- [ ] `order_only` captures still anchor above the recorded fraction using number and speaker agreement alone.
-- [ ] Monotonicity is never violated in the output.
-- [ ] A deliberately misdeclared wall clock is detected as a systematic residual and reported.
-- [ ] Interpolated rolls carry an uncertainty that widens with distance from the nearest anchor.
-- [ ] The quality report is written to the alignment artifact.
+- [x] On the fixture, rolls anchor to the utterances that announce them, matching `truth.json`.
+- [x] `order_only` captures still anchor above the recorded fraction using number and speaker agreement alone.
+- [x] Monotonicity is never violated in the output.
+- [x] A deliberately misdeclared wall clock is detected as a systematic residual and reported.
+- [x] Interpolated rolls carry an uncertainty that widens with distance from the nearest anchor.
+- [x] The quality report is written to the alignment artifact.
