@@ -25,7 +25,7 @@
     "test:all": "npm run test && npm run test:py",
     "test:py": "node tools/run-pytest.mjs",
     "tickets": "node tools/tickets.mjs",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "tsc -p tsconfig.json && npm run typecheck --workspaces --if-present"
   },
   "devDependencies": {
     "@dnd/cli": "*",

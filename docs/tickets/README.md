@@ -40,6 +40,10 @@ Exact commands to run, and what their output must show.
 Gotchas, references to prior art, links.
 ```
 
+### Filling in `commit:`
+
+A commit cannot contain its own SHA, so a ticket never lands as `done` in the same commit as its work. It lands as `approved`; the next commit flips it to `done` and records the short SHA. `npm run tickets -- --check` enforces the end state — a `done` ticket with an empty `commit` is an error — and stays green in between, because `approved` carries no such requirement.
+
 `scope` is the worker's exclusive file boundary. Editing outside it is an automatic RETURN in review — see `docs/orchestration.md`.
 
 ## Dependency graph
