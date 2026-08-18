@@ -2,8 +2,8 @@
 id: P1-09
 phase: 1
 title: Intake stage and the pipeline CLI
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p1-09"
 depends_on: [P1-03, P1-05, P1-06, P1-07, P1-08]
 scope:
   - packages/core/src/stages/intake.ts
