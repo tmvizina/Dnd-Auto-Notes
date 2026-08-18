@@ -32,6 +32,9 @@ interface PlainRecord {
   readonly stages?: unknown;
   readonly force?: unknown;
   readonly reason?: unknown;
+  readonly setupCommand?: unknown;
+  readonly maxLines?: unknown;
+  readonly lines?: unknown;
   readonly subscriptionId?: unknown;
   readonly key?: unknown;
   readonly settings?: unknown;
@@ -76,6 +79,7 @@ const CHANNEL_VALUES = {
   },
   sidecar: {
     status: "dnd/sidecar/status",
+    logs: "dnd/sidecar/logs",
   },
 } as const;
 
@@ -515,6 +519,7 @@ export interface SidecarStatusEvent {
   readonly type: "sidecar_status";
   readonly status: "stopped" | "starting" | "ready" | "unhealthy" | "unavailable";
   readonly reason?: string;
+  readonly setupCommand?: string;
 }
 
 export type DesktopEvent = RunEvent | SidecarStatusEvent;
@@ -560,6 +565,15 @@ export interface SettingsSetResponse {
 export interface SidecarStatusResponse {
   readonly status: SidecarStatusEvent["status"];
   readonly reason?: string;
+  readonly setupCommand?: string;
+}
+
+export interface SidecarLogsRequest {
+  readonly maxLines?: number;
+}
+
+export interface SidecarLogsResponse {
+  readonly lines: readonly string[];
 }
 
 export interface IpcRequestMap {
@@ -573,6 +587,7 @@ export interface IpcRequestMap {
   settingsGet: Record<string, never>;
   settingsSet: SettingsSetRequest;
   sidecarStatus: Record<string, never>;
+  sidecarLogs: SidecarLogsRequest;
 }
 
 export interface IpcResponseMap {
@@ -586,6 +601,7 @@ export interface IpcResponseMap {
   settingsGet: SettingsGetResponse;
   settingsSet: SettingsSetResponse;
   sidecarStatus: SidecarStatusResponse;
+  sidecarLogs: SidecarLogsResponse;
 }
 
 export type IpcOperation = keyof IpcRequestMap;
@@ -603,6 +619,7 @@ const operationForChannel = new Map<string, IpcOperation>([
   [CHANNELS.settings.get, "settingsGet"],
   [CHANNELS.settings.set, "settingsSet"],
   [CHANNELS.sidecar.status, "sidecarStatus"],
+  [CHANNELS.sidecar.logs, "sidecarLogs"],
 ]);
 
 function parseSessionSummary(value: unknown, context: string): SessionSummary {
@@ -880,6 +897,14 @@ function parseRequestForOperation(operation: IpcOperation, value: unknown): IpcR
     case "sidecarStatus":
       parseObject(value, [], "sidecar.status request");
       return {};
+    case "sidecarLogs": {
+      const record = parseObject(value, ["maxLines"], "sidecar.logs request");
+      return {
+        ...(record.maxLines === undefined
+          ? {}
+          : { maxLines: requiredInteger(record.maxLines, "maxLines", 1, 1_000) }),
+      };
+    }
   }
 }
 
@@ -989,7 +1014,11 @@ function parseResponseForOperation(operation: IpcOperation, value: unknown): Ipc
       return { key: key as SettingKey, value: requiredString(record.value, "value") };
     }
     case "sidecarStatus": {
-      const record = parseObject(value, ["status", "reason"], "sidecar.status response");
+      const record = parseObject(
+        value,
+        ["status", "reason", "setupCommand"],
+        "sidecar.status response",
+      );
       if (
         record.status !== "stopped" &&
         record.status !== "starting" &&
@@ -1001,6 +1030,21 @@ function parseResponseForOperation(operation: IpcOperation, value: unknown): Ipc
       return {
         status: record.status,
         ...(record.reason === undefined ? {} : { reason: requiredString(record.reason, "reason") }),
+        ...(record.setupCommand === undefined
+          ? {}
+          : { setupCommand: requiredString(record.setupCommand, "setupCommand") }),
+      };
+    }
+    case "sidecarLogs": {
+      const record = parseObject(value, ["lines"], "sidecar.logs response");
+      if (!Array.isArray(record.lines) || record.lines.length > 1_000)
+        throw invalid(ERROR_CODES.invalidValue, "sidecar log lines must be a bounded array", {
+          field: "lines",
+        });
+      return {
+        lines: record.lines.map((line, index) =>
+          requiredString(line, `lines[${String(index)}]`, IPC_LIMITS.maxStringLength),
+        ),
       };
     }
   }
@@ -1147,8 +1191,17 @@ export function sanitizeOutboundEvent(value: unknown): SanitizedOutboundEvent | 
         failed = true;
         return undefined;
       }
+      let isSidecarStatus = false;
+      try {
+        isSidecarStatus = (candidate as PlainRecord)["type"] === "sidecar_status";
+      } catch {
+        failed = true;
+        return undefined;
+      }
       for (const key of keys) {
-        if (deniedOutboundKey(key)) continue;
+        // setupCommand is allowed only on the explicitly typed sidecar event;
+        // generic command/path fields remain denied everywhere else.
+        if (deniedOutboundKey(key) && !(isSidecarStatus && key === "setupCommand")) continue;
         let child: unknown;
         try {
           child = (candidate as PlainRecord)[key];
@@ -1208,6 +1261,9 @@ export function validateOutboundEvent(value: unknown): DesktopEvent {
       ...(sanitized["reason"] === undefined
         ? {}
         : { reason: requiredString(sanitized["reason"], "reason") }),
+      ...(sanitized["setupCommand"] === undefined
+        ? {}
+        : { setupCommand: requiredString(sanitized["setupCommand"], "setupCommand") }),
     };
   }
   return parseRunEvent(sanitized, "outbound event");

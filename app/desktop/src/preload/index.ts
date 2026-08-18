@@ -32,6 +32,8 @@ import {
   type SettingsGetResponse,
   type SidecarStatusResponse,
   type SidecarStatusEvent,
+  type SidecarLogsRequest,
+  type SidecarLogsResponse,
 } from "../shared/contracts.js";
 
 /** Minimal renderer transport, allowing the bridge to be tested without Electron. */
@@ -73,6 +75,7 @@ export interface DesktopBridge {
   };
   readonly sidecar: {
     readonly status: () => Promise<IpcEnvelope<SidecarStatusResponse>>;
+    readonly logs: (request?: SidecarLogsRequest) => Promise<IpcEnvelope<SidecarLogsResponse>>;
   };
 }
 
@@ -187,6 +190,8 @@ export function buildBridge(renderer: IpcRendererLike): DesktopBridge {
     sidecar: {
       status: () =>
         invoke<Record<string, never>, SidecarStatusResponse>(renderer, CHANNELS.sidecar.status, {}),
+      logs: (request: SidecarLogsRequest = {}) =>
+        invoke<SidecarLogsRequest, SidecarLogsResponse>(renderer, CHANNELS.sidecar.logs, request),
     },
   };
   return freezeBridge(bridge);

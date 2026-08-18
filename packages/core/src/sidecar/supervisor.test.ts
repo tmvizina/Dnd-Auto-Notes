@@ -42,6 +42,7 @@ describe("resolveLauncher", () => {
   it("finds this repo's environment", () => {
     const launcher = resolveLauncher(join(REPO_ROOT, "sidecar"));
     expect(["uv", "venv"]).toContain(launcher.kind);
+    expect(launcher.args).not.toContain("run");
   });
 
   it("names the exact command to run when there is no environment at all", () => {

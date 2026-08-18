@@ -117,4 +117,28 @@ describe("preload bridge", () => {
     const oversizedResponse = await bridge.sessions.list();
     expect(oversizedResponse).toMatchObject({ ok: false, error: { code: "payload_too_large" } });
   });
+
+  it("exposes setup commands and bounded sidecar logs through the bridge", async () => {
+    const invoke = vi.fn(async (channel: string): Promise<unknown> => {
+      if (channel === CHANNELS.sidecar.status)
+        return success({ status: "unavailable", setupCommand: "uv venv .venv" });
+      return success({ lines: ["sidecar line"] });
+    });
+    const fake: IpcRendererLike = {
+      invoke,
+      on: vi.fn(),
+      removeListener: vi.fn(),
+    };
+    const bridge = buildBridge(fake);
+
+    await expect(bridge.sidecar.status()).resolves.toEqual({
+      ok: true,
+      value: { status: "unavailable", setupCommand: "uv venv .venv" },
+    });
+    await expect(bridge.sidecar.logs({ maxLines: 5 })).resolves.toEqual({
+      ok: true,
+      value: { lines: ["sidecar line"] },
+    });
+    expect(invoke).toHaveBeenCalledWith(CHANNELS.sidecar.logs, success({ maxLines: 5 }));
+  });
 });

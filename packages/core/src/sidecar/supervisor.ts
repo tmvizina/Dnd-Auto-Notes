@@ -66,20 +66,18 @@ export function resolveLauncher(sidecarDir: string): {
   command: string;
   args: string[];
 } {
-  if (commandExists("uv")) {
-    return { kind: "uv", command: "uv", args: ["run", "--project", sidecarDir, "python"] };
-  }
   const python = join(sidecarDir, ".venv", isWindows() ? "Scripts/python.exe" : "bin/python");
   if (existsSync(python)) {
+    // An existing environment is mandatory. `uv run` is intentionally not
+    // used here because it may create/sync a missing environment implicitly.
     return { kind: "venv", command: python, args: [] };
   }
-  throw new SidecarError(
-    "env_missing",
-    "no Python environment for the sidecar",
-    isWindows()
+  const remedy = commandExists("uv")
+    ? 'cd sidecar && uv venv .venv && uv pip install -e ".[dev]"'
+    : isWindows()
       ? 'cd sidecar && py -3.12 -m venv .venv && .venv/Scripts/python -m pip install -e ".[dev]"'
-      : 'cd sidecar && python3.12 -m venv .venv && .venv/bin/python -m pip install -e ".[dev]"',
-  );
+      : 'cd sidecar && python3.12 -m venv .venv && .venv/bin/python -m pip install -e ".[dev]"';
+  throw new SidecarError("env_missing", "no Python environment for the sidecar", remedy);
 }
 
 /** Resolves the port to try: explicit option, then env, then the default. */

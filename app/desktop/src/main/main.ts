@@ -1,9 +1,12 @@
 import { mkdirSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { app, BrowserWindow, session } from "electron";
-import { registerIpcHandlers } from "./ipc.js";
+import { registerIpcHandlers, sendOutboundEvent, type IpcHandlerMap } from "./ipc.js";
 import { getUiRoot, getUserDataPaths, type DesktopUserDataPaths } from "./paths.js";
+import { DesktopSidecarSupervisor, type SidecarState } from "./sidecar/index.js";
+import { structuredError, type DesktopEvent } from "../shared/contracts.js";
 import { createUiUrl, isAllowedUiUrl, registerUiProtocol, registerUiScheme } from "./uiProtocol.js";
 
 const DEV_URL_ENV = ["DND_DEV_SERVER_URL", "VITE_DEV_SERVER_URL", "ELECTRON_RENDERER_URL"] as const;
@@ -14,6 +17,10 @@ let rendererOrigin: string | undefined;
 let rendererUrl: string | undefined;
 let removeIpcHandlers: (() => void) | null = null;
 let networkBlockInstalled = false;
+let sidecar: DesktopSidecarSupervisor | null = null;
+let eventSequence = 0;
+let quitStopPromise: Promise<void> | null = null;
+let quitRequested = false;
 const mainDirectory = dirname(fileURLToPath(import.meta.url));
 
 function localDevUrl(): string | null {
@@ -43,6 +50,126 @@ function configureUserDataPaths(): DesktopUserDataPaths {
   mkdirSync(paths.sessions, { recursive: true });
   app.setAppLogsPath(paths.logs);
   return paths;
+}
+
+function desktopRepoRoot(): string {
+  return (
+    process.env["DND_REPO_ROOT"] ??
+    (app.isPackaged ? process.resourcesPath : join(app.getAppPath(), "..", ".."))
+  );
+}
+
+function sidecarEvent(state: SidecarState): Record<string, unknown> {
+  return {
+    type: "sidecar_status",
+    status: state.status,
+    ...(state.reason === undefined ? {} : { reason: state.reason }),
+    ...(state.setupCommand === undefined ? {} : { setupCommand: state.setupCommand }),
+  };
+}
+
+export function createAcceptedPipelineRunTracker(emit: (event: DesktopEvent) => void) {
+  const runs = new Map<string, AbortController>();
+  return {
+    accept(runId: string, controller: AbortController): void {
+      runs.set(runId, controller);
+    },
+    cancel(runId: string): boolean {
+      const controller = runs.get(runId);
+      if (controller === undefined) return false;
+      controller.abort();
+      runs.delete(runId);
+      return true;
+    },
+    fail(reason: string, code: "unhealthy" | "unavailable"): void {
+      const error = structuredError(code, `Pipeline run failed because the sidecar ${reason}`);
+      for (const [runId, controller] of runs) {
+        controller.abort();
+        emit({ type: "run_failed", sequence: ++eventSequence, runId, error });
+        runs.delete(runId);
+      }
+    },
+  };
+}
+
+const acceptedPipelineRuns = createAcceptedPipelineRunTracker((event) => {
+  if (mainWindow !== null) sendOutboundEvent(mainWindow.webContents, event);
+});
+
+function failAcceptedPipelineRuns(reason: string, code: "unhealthy" | "unavailable"): void {
+  acceptedPipelineRuns.fail(reason, code);
+}
+
+function handleSidecarState(state: SidecarState): void {
+  if (state.status === "unhealthy" || state.status === "unavailable") {
+    failAcceptedPipelineRuns(state.status, state.status);
+  }
+  if (mainWindow !== null) sendOutboundEvent(mainWindow.webContents, sidecarEvent(state));
+}
+
+function stopSidecarOnce(): Promise<void> {
+  if (quitStopPromise !== null) return quitStopPromise;
+  quitStopPromise = sidecar?.stop() ?? Promise.resolve();
+  return quitStopPromise;
+}
+
+export function createQuitStopper(
+  supervisor: Pick<DesktopSidecarSupervisor, "stop">,
+): () => Promise<void> {
+  let stopPromise: Promise<void> | null = null;
+  return () => {
+    if (stopPromise === null) stopPromise = supervisor.stop();
+    return stopPromise;
+  };
+}
+
+function setupSidecar(paths: DesktopUserDataPaths): void {
+  sidecar = new DesktopSidecarSupervisor({
+    repoRoot: desktopRepoRoot(),
+    stateDir: paths.userData,
+    logDir: paths.logs,
+  });
+  sidecar.onState(handleSidecarState, false);
+}
+
+export function createSidecarHandlers(
+  supervisor: Pick<DesktopSidecarSupervisor, "state" | "ensureRunning" | "getLogTail">,
+): IpcHandlerMap {
+  return {
+    sidecarStatus: () => {
+      const state = supervisor.state;
+      return {
+        status: state.status,
+        ...(state.reason === undefined ? {} : { reason: state.reason }),
+        ...(state.setupCommand === undefined ? {} : { setupCommand: state.setupCommand }),
+      };
+    },
+    sidecarLogs: async ({ maxLines }: { maxLines?: number }) => ({
+      lines: await supervisor.getLogTail(maxLines),
+    }),
+    pipelineRun: async (request: {
+      sessionId: string;
+      stages?: readonly string[];
+      force?: boolean;
+    }) => {
+      await supervisor.ensureRunning();
+      const runId = randomUUID();
+      const controller = new AbortController();
+      acceptedPipelineRuns.accept(runId, controller);
+      // The pipeline itself is owned by the desktop run/session boundary.
+      // P4-02 exposes no /jobs/pipeline endpoint, so accepting the run here
+      // must not invent an HTTP call to the sidecar.
+      void request;
+      return { runId };
+    },
+    pipelineCancel: ({ runId }: { runId: string }) => {
+      return { cancelled: acceptedPipelineRuns.cancel(runId) };
+    },
+  };
+}
+
+function sidecarHandlers(): IpcHandlerMap {
+  return sidecar === null ? {} : createSidecarHandlers(sidecar);
 }
 
 function installNetworkBlock(): void {
@@ -89,6 +216,7 @@ async function loadRenderer(window: BrowserWindow, uiRoot: string): Promise<void
       expectedSenderId: window.webContents.id,
       expectedOrigin: () => rendererOrigin ?? "",
       expectedFrameUrl: () => rendererUrl ?? "",
+      handlers: sidecarHandlers(),
     });
     await window.loadURL(devUrl);
     return;
@@ -102,6 +230,7 @@ async function loadRenderer(window: BrowserWindow, uiRoot: string): Promise<void
     expectedSenderId: window.webContents.id,
     expectedOrigin: () => rendererOrigin ?? "",
     expectedFrameUrl: () => rendererUrl ?? "",
+    handlers: sidecarHandlers(),
   });
   await window.loadURL(rendererUrl);
 }
@@ -146,6 +275,7 @@ export async function createMainWindow(): Promise<BrowserWindow> {
   mainWindow = window;
   try {
     await loadRenderer(window, uiRoot);
+    if (sidecar !== null) sendOutboundEvent(window.webContents, sidecarEvent(sidecar.state));
   } catch (error) {
     console.error("[desktop] renderer failed to load", error);
   }
@@ -170,6 +300,7 @@ if (!hasSingleInstanceLock) {
     .whenReady()
     .then(() => {
       const paths = configureUserDataPaths();
+      setupSidecar(paths);
       installNetworkBlock();
       console.error(`[desktop] userData=${paths.userData}`);
       void createMainWindow();
@@ -189,5 +320,12 @@ if (!hasSingleInstanceLock) {
 
   app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();
+  });
+
+  app.on("before-quit", (event) => {
+    if (quitRequested) return;
+    quitRequested = true;
+    event.preventDefault();
+    void stopSidecarOnce().finally(() => app.quit());
   });
 }

@@ -36,6 +36,8 @@ import {
   type SettingsSetResponse,
   type SettingsGetResponse,
   type SidecarStatusResponse,
+  type SidecarLogsRequest,
+  type SidecarLogsResponse,
   type DesktopEvent,
 } from "../shared/contracts.js";
 
@@ -102,6 +104,10 @@ export interface IpcHandlerMap {
   sidecarStatus?: (
     context: IpcHandlerContext,
   ) => SidecarStatusResponse | Promise<SidecarStatusResponse>;
+  sidecarLogs?: (
+    request: SidecarLogsRequest,
+    context: IpcHandlerContext,
+  ) => SidecarLogsResponse | Promise<SidecarLogsResponse>;
 }
 
 export interface IpcRegistrationOptions {
@@ -271,6 +277,10 @@ async function dispatch(
       return handlers.sidecarStatus === undefined
         ? handlerUnavailable()
         : handlers.sidecarStatus(context);
+    case "sidecarLogs":
+      return handlers.sidecarLogs === undefined
+        ? handlerUnavailable()
+        : handlers.sidecarLogs(request as SidecarLogsRequest, context);
   }
 }
 
@@ -285,6 +295,7 @@ const CHANNEL_OPERATIONS: ReadonlyArray<readonly [string, keyof IpcHandlerMap]> 
   [CHANNELS.settings.get, "settingsGet"],
   [CHANNELS.settings.set, "settingsSet"],
   [CHANNELS.sidecar.status, "sidecarStatus"],
+  [CHANNELS.sidecar.logs, "sidecarLogs"],
 ];
 
 /**

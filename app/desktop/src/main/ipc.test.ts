@@ -302,4 +302,42 @@ describe("main IPC boundary", () => {
     ).toBe(false);
     expect(sent).toHaveLength(1);
   });
+
+  it("validates sidecar setup commands and bounded log-tail responses", async () => {
+    const ipc = new FakeIpcMain();
+    registerIpcHandlers({
+      expectedSenderId: 7,
+      expectedOrigin: "dnd-auto-notes://app",
+      expectedFrameUrl: "dnd-auto-notes://app/index.html",
+      ipcMain: ipc,
+      handlers: {
+        sidecarStatus: () => ({
+          status: "unavailable",
+          reason: "environment missing",
+          setupCommand: "uv venv .venv",
+        }),
+        sidecarLogs: ({ maxLines }) => ({
+          lines: [`requested ${String(maxLines ?? 200)}`],
+        }),
+      },
+    });
+
+    const status = await ipc.call(CHANNELS.sidecar.status, trustedEvent(), success({}));
+    expect(status).toEqual({
+      ok: true,
+      value: {
+        status: "unavailable",
+        reason: "environment missing",
+        setupCommand: "uv venv .venv",
+      },
+    });
+    const logs = await ipc.call(CHANNELS.sidecar.logs, trustedEvent(), success({ maxLines: 10 }));
+    expect(logs).toEqual({ ok: true, value: { lines: ["requested 10"] } });
+    const invalid = await ipc.call(
+      CHANNELS.sidecar.logs,
+      trustedEvent(),
+      success({ maxLines: 10_001 }),
+    );
+    expect(invalid).toMatchObject({ ok: false, error: { code: "invalid_value" } });
+  });
 });

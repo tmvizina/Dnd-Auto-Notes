@@ -5,6 +5,8 @@ import {
   assertOnlyKeys,
   sanitizeOutboundEvent,
   validateRequest,
+  validateResponse,
+  validateOutboundEvent,
   validateResponseEnvelope,
 } from "./contracts.js";
 
@@ -105,5 +107,47 @@ describe("desktop IPC contracts", () => {
     expect(() =>
       assertOnlyKeys({ accepted: true, unexpected: 1 }, ["accepted"], "request"),
     ).toThrow("unexpected");
+  });
+
+  it("validates setup commands and bounded sidecar log requests", () => {
+    expect(
+      validateResponse(CHANNELS.sidecar.status, {
+        status: "unavailable",
+        reason: "environment missing",
+        setupCommand: "uv venv .venv",
+      }),
+    ).toEqual({
+      status: "unavailable",
+      reason: "environment missing",
+      setupCommand: "uv venv .venv",
+    });
+    expect(validateRequest(CHANNELS.sidecar.logs, { maxLines: 20 })).toEqual({ maxLines: 20 });
+    expect(validateResponse(CHANNELS.sidecar.logs, { lines: ["one", "two"] })).toEqual({
+      lines: ["one", "two"],
+    });
+    expect(() => validateRequest(CHANNELS.sidecar.logs, { maxLines: 10_001 })).toThrow();
+  });
+
+  it("keeps setupCommand explicit on sanitized sidecar events", () => {
+    expect(
+      validateOutboundEvent({
+        type: "sidecar_status",
+        status: "unavailable",
+        reason: "venv missing",
+        setupCommand: "uv venv .venv",
+      }),
+    ).toEqual({
+      type: "sidecar_status",
+      status: "unavailable",
+      reason: "venv missing",
+      setupCommand: "uv venv .venv",
+    });
+    expect(() =>
+      validateOutboundEvent({
+        type: "sidecar_status",
+        status: "unavailable",
+        setupCommand: 42,
+      }),
+    ).toThrow();
   });
 });
