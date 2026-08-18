@@ -13,9 +13,11 @@ commit: ""
 ---
 
 ## Why
+
 The generated notes are a strong draft, not a final document. The user needs to fix a name, cut a tangent, or ask for a section to be rewritten — without leaving the app and without losing the connection back to the timestamps.
 
 ## Do
+
 1. Render `session.md` with the source markdown one keystroke away. Timestamp anchors are clickable and play the corresponding audio through the same lazy `ClipPlayer`.
 2. Direct editing with autosave to `session.md`, debounced, atomic writes, and an on-disk change watcher that warns rather than clobbering if the file changed underneath.
 3. Local undo history per session, plus a snapshot before any LLM edit so a bad rewrite is one click away from reverted.
@@ -24,6 +26,7 @@ The generated notes are a strong draft, not a final document. The user needs to 
 6. Show the QA grade and the uncertainties list beside the document, with each uncertainty linking to the review page.
 
 ## Acceptance
+
 - [ ] Edits persist to `session.md` and survive an app restart.
 - [ ] Timestamp anchors play the right audio.
 - [ ] An LLM edit shows a diff and applies only on accept.

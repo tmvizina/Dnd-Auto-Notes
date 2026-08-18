@@ -2,16 +2,16 @@
 
 How to run this backlog with Claude Code — an Opus 5 orchestrator driving Sonnet 5 workers — at token cost comparable to the Codex path (5.6 Sol medium orchestrator, Luna Max implementers, Luna Max reviewer).
 
-`docs/orchestration.md` is canonical for *what* the loop is. This document is *how to run it on Claude Code without paying twice for the same result*.
+`docs/orchestration.md` is canonical for _what_ the loop is. This document is _how to run it on Claude Code without paying twice for the same result_.
 
 ## Role and model assignment
 
-| Role | Model | Effort | Why |
-| --- | --- | --- | --- |
-| Orchestrator | `claude-opus-5` | `high` | Holds the dependency graph, judges diffs, decides what to commit. Small context, high-stakes decisions — exactly where Opus pays for itself. |
-| Implementer | `claude-sonnet-5` | `xhigh` | Bounded scope, clear acceptance list, lots of tool calls. This is where the token volume is, so it runs on the cheaper model at high effort rather than the expensive model at low effort. |
-| Reviewer | `claude-sonnet-5` | `high` | Reads a diff against a checklist. Judgment, not exploration. |
-| Fixture / boilerplate work | `claude-haiku-4-5` | — | Optional. `P0-05` and similar mechanical tickets don't need Sonnet. |
+| Role                       | Model              | Effort  | Why                                                                                                                                                                                        |
+| -------------------------- | ------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Orchestrator               | `claude-opus-5`    | `high`  | Holds the dependency graph, judges diffs, decides what to commit. Small context, high-stakes decisions — exactly where Opus pays for itself.                                               |
+| Implementer                | `claude-sonnet-5`  | `xhigh` | Bounded scope, clear acceptance list, lots of tool calls. This is where the token volume is, so it runs on the cheaper model at high effort rather than the expensive model at low effort. |
+| Reviewer                   | `claude-sonnet-5`  | `high`  | Reads a diff against a checklist. Judgment, not exploration.                                                                                                                               |
+| Fixture / boilerplate work | `claude-haiku-4-5` | —       | Optional. `P0-05` and similar mechanical tickets don't need Sonnet.                                                                                                                        |
 
 `.claude/agents/orchestrator.md`, `implementer.md`, and `reviewer.md` set `model:` in their frontmatter. The orchestrator inherits its model from the session; run it in an Opus 5 session.
 
@@ -19,28 +19,28 @@ How to run this backlog with Claude Code — an Opus 5 orchestrator driving Sonn
 
 Current list prices, per million tokens:
 
-| Model | Input | Output | Cache read | Cache write (5m) |
-| --- | ---: | ---: | ---: | ---: |
-| Opus 5 | $5.00 | $25.00 | $0.50 | $6.25 |
-| Sonnet 5 | $3.00 | $15.00 | $0.30 | $3.75 |
-| Haiku 4.5 | $1.00 | $5.00 | $0.10 | $1.25 |
+| Model     | Input | Output | Cache read | Cache write (5m) |
+| --------- | ----: | -----: | ---------: | ---------------: |
+| Opus 5    | $5.00 | $25.00 |      $0.50 |            $6.25 |
+| Sonnet 5  | $3.00 | $15.00 |      $0.30 |            $3.75 |
+| Haiku 4.5 | $1.00 |  $5.00 |      $0.10 |            $1.25 |
 
 Sonnet 5 is at an introductory $2.00 / $10.00 through 2026-08-31, which makes the worker tier cheaper than the table above until then.
 
 **The dominant cost is input tokens on the worker, not output tokens anywhere.** An agentic session resends its whole conversation on every turn, so cumulative input scales with turns × context size. A 30-turn implementer session whose context grows from 20K to 120K tokens sends roughly 2.1M cumulative input tokens — against maybe 25K output tokens. Input is ~80× the volume of output on that session, and only ~4× cheaper per token.
 
-That arithmetic is why the rules below are about *context discipline*, not about picking cheaper models.
+That arithmetic is why the rules below are about _context discipline_, not about picking cheaper models.
 
 ### One ticket, budgeted
 
 Assumptions: a medium ticket, ~30 implementer turns, ~8 reviewer turns, ~6 orchestrator turns. Sonnet 5 at standard pricing.
 
-| | Cumulative input | Output | Uncached | With ~85% cache hits |
-| --- | ---: | ---: | ---: | ---: |
-| Implementer (Sonnet) | 2.1M | 25K | $6.68 | $1.86 |
-| Reviewer (Sonnet) | 0.35M | 6K | $1.14 | $0.41 |
-| Orchestrator (Opus) | 0.20M | 8K | $1.20 | $0.53 |
-| **Per ticket** | | | **$9.02** | **$2.80** |
+|                      | Cumulative input | Output |  Uncached | With ~85% cache hits |
+| -------------------- | ---------------: | -----: | --------: | -------------------: |
+| Implementer (Sonnet) |             2.1M |    25K |     $6.68 |                $1.86 |
+| Reviewer (Sonnet)    |            0.35M |     6K |     $1.14 |                $0.41 |
+| Orchestrator (Opus)  |            0.20M |     8K |     $1.20 |                $0.53 |
+| **Per ticket**       |                  |        | **$9.02** |            **$2.80** |
 
 Caching is a ~3× difference, and it is the whole game. Fifty-two tickets is roughly **$150 run well, $470 run badly** — and the badly-run version also produces worse work, because the failure mode that wastes tokens (re-deriving context) is the same one that produces wrong code.
 
@@ -82,7 +82,7 @@ Two to three concurrent workers is the ceiling for a different reason too: revie
 
 ### 4. Delete verification scaffolding — don't add it
 
-Instructions telling Opus 5 to "double-check", "verify before responding", or "spawn a subagent to verify" now cause *over*-verification: it re-runs work it already did correctly, at Opus prices. It verifies on its own.
+Instructions telling Opus 5 to "double-check", "verify before responding", or "spawn a subagent to verify" now cause _over_-verification: it re-runs work it already did correctly, at Opus prices. It verifies on its own.
 
 This inverts the usual prompting advice, so it's worth stating plainly: on this model, "ask it to self-check" is a cost bug. The orchestrator's real verification is mechanical — run the test suite, read the diff, check scope containment. That's a tool call, not a reasoning loop.
 
@@ -93,12 +93,12 @@ Prompt caching is a prefix match with a 1-hour TTL in this session. An orchestra
 But context that grows without bound is worse: every turn re-sends it. The balance:
 
 - **Keep going** through tickets within a phase — the shared prefix is doing real work.
-- **`/clear` at phase boundaries**, and any time the transcript is mostly finished work. Update `docs/HANDOFF.md` *first*; that file is the handoff, so clearing costs nothing once it's current.
+- **`/clear` at phase boundaries**, and any time the transcript is mostly finished work. Update `docs/HANDOFF.md` _first_; that file is the handoff, so clearing costs nothing once it's current.
 - **Prefer `/clear` over `/compact`** here. Compaction spends tokens summarizing a transcript whose durable content already lives in `HANDOFF.md` and the ticket files. This backlog is designed so that state lives on disk, which makes clearing cheap.
 
 ### 6. Don't switch the orchestrator's model mid-run
 
-Prompt caches are model-scoped. Switching the orchestrator from Opus to Sonnet to "save money" discards the entire cached prefix and pays a full cold read on the next turn — often costing more than the switch saves. If you want cheaper work, spawn a cheaper *subagent*; the orchestrator's own session stays on one model start to finish.
+Prompt caches are model-scoped. Switching the orchestrator from Opus to Sonnet to "save money" discards the entire cached prefix and pays a full cold read on the next turn — often costing more than the switch saves. If you want cheaper work, spawn a cheaper _subagent_; the orchestrator's own session stays on one model start to finish.
 
 The same applies to churning the context prefix: editing `CLAUDE.md` or `AGENTS.md` mid-session invalidates everything cached after it. Batch those edits to phase boundaries.
 
@@ -110,7 +110,7 @@ The same applies to churning the context prefix: editing `CLAUDE.md` or `AGENTS.
 
 Beyond cost, three of Opus 5's defaults work against an orchestrator specifically. All three are already handled in `.claude/agents/orchestrator.md`; this is why those lines are there.
 
-**Longer responses by default.** Opus 5 writes more user-facing text than its predecessors, and lowering `effort` does *not* reliably shorten it — that's a prompting lever, not a configuration one. The orchestrator's job is a status line and a decision, not an essay. Keep the conciseness instruction.
+**Longer responses by default.** Opus 5 writes more user-facing text than its predecessors, and lowering `effort` does _not_ reliably shorten it — that's a prompting lever, not a configuration one. The orchestrator's job is a status line and a decision, not an essay. Keep the conciseness instruction.
 
 **Task scope expansion.** It can quietly widen what it was asked to do — fixing an adjacent thing, improving a file it happened to open. In an orchestrator that means committing work outside the ticket's `scope:`, which is exactly the thing the review gate exists to catch. The scope-discipline instruction stays.
 
@@ -143,22 +143,22 @@ npm run tickets -- --ready
 
 ## Cost parity with the Codex path
 
-| | Codex | Claude Code |
-| --- | --- | --- |
-| Orchestrator | 5.6 Sol, medium reasoning | Opus 5, `high` effort |
-| Implementer | Luna, max reasoning | Sonnet 5, `xhigh` effort |
-| Reviewer | Luna, max reasoning, separate instance | Sonnet 5, separate agent |
-| Cheap tier | — | Haiku 4.5 for mechanical tickets |
-| Main lever | Keeping the orchestrator at medium | Prompt-cache hit rate on worker sessions |
+|              | Codex                                  | Claude Code                              |
+| ------------ | -------------------------------------- | ---------------------------------------- |
+| Orchestrator | 5.6 Sol, medium reasoning              | Opus 5, `high` effort                    |
+| Implementer  | Luna, max reasoning                    | Sonnet 5, `xhigh` effort                 |
+| Reviewer     | Luna, max reasoning, separate instance | Sonnet 5, separate agent                 |
+| Cheap tier   | —                                      | Haiku 4.5 for mechanical tickets         |
+| Main lever   | Keeping the orchestrator at medium     | Prompt-cache hit rate on worker sessions |
 
 The two paths land in the same place for the same reason: a capable-but-expensive model making a small number of high-stakes decisions over a small context, and a cheaper model doing the bulk token work inside a tightly bounded scope. Neither path is cheap if the expensive model starts doing the exploring.
 
 ## Quick reference
 
-| Symptom | Cause | Fix |
-| --- | --- | --- |
-| Orchestrator session is huge after two tickets | It's reading implementation files | Rule 1 — read the diff, not the tree |
-| A worker takes 40 turns on an S ticket | Spawn prompt didn't carry the ticket | Rule 2 — inline the ticket and the paths |
-| Cost per ticket 3× the table | Cache misses; context prefix churning | Rules 5 and 6 — stop editing shared files mid-session |
-| Orchestrator spawning agents to check things | Opus 5's delegation default | Rule 3 — the cap is in the agent definition |
-| Work committed outside `scope:` | Scope expansion | Reviewer returns it; keep the scope instruction |
+| Symptom                                        | Cause                                 | Fix                                                   |
+| ---------------------------------------------- | ------------------------------------- | ----------------------------------------------------- |
+| Orchestrator session is huge after two tickets | It's reading implementation files     | Rule 1 — read the diff, not the tree                  |
+| A worker takes 40 turns on an S ticket         | Spawn prompt didn't carry the ticket  | Rule 2 — inline the ticket and the paths              |
+| Cost per ticket 3× the table                   | Cache misses; context prefix churning | Rules 5 and 6 — stop editing shared files mid-session |
+| Orchestrator spawning agents to check things   | Opus 5's delegation default           | Rule 3 — the cap is in the agent definition           |
+| Work committed outside `scope:`                | Scope expansion                       | Reviewer returns it; keep the scope instruction       |

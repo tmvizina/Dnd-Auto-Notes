@@ -13,9 +13,11 @@ commit: ""
 ---
 
 ## Why
+
 Roll20 has no export worth using. Everything mechanical that happened in the session — every roll, every turn-order change — is locked in a browser tab, and the quality of the final notes depends on getting it out with usable timestamps.
 
 ## Do
+
 1. A single dependency-free file that pastes into the Chrome console on an open Roll20 game tab. No build step, no extension, no bundler.
 2. **Live mode** (`dndCapture.start()`): attach a `MutationObserver` to the chat container, stamp every new message with `Date.now()` and a monotonic `performance.now()`, and buffer to `localStorage` under a session key so a page reload does not lose the evening. Also observe the turn-order tracker and record every change as an event.
 3. **Post-hoc mode** (`dndCapture.dump()`): walk the existing chat DOM and emit every message present, in order, with whatever timing can be recovered.
@@ -26,6 +28,7 @@ Roll20 has no export worth using. Everything mechanical that happened in the ses
 8. `docs/roll20-capture.md`: a short, screenshot-free walkthrough the user can follow at the table, including "start this before the session" and the post-hoc rescue path.
 
 ## Acceptance
+
 - [ ] Pasting the script into a real Roll20 tab captures messages live and downloads a valid JSON file.
 - [ ] Post-hoc mode on the same tab recovers the visible backlog.
 - [ ] Raw `outerHTML` is retained for every message.
@@ -33,4 +36,5 @@ Roll20 has no export worth using. Everything mechanical that happened in the ses
 - [ ] The script throws no uncaught error over a full session and leaves the DOM unmodified.
 
 ## Notes
+
 Roll20's DOM is not a stable API. The `outerHTML` retention is the hedge: when Roll20 changes markup, only the parser (`P1-05`) needs fixing and old captures still reparse.

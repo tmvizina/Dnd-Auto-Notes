@@ -39,7 +39,7 @@ sessions/
     session.pdf              exported on demand
 ```
 
-`sessions/*/input/`, `sessions/*/media/` and any audio are gitignored. Stage JSON is small and *is* committed for a real session if the user wants history; that is a per-user choice, not a requirement.
+`sessions/*/input/`, `sessions/*/media/` and any audio are gitignored. Stage JSON is small and _is_ committed for a real session if the user wants history; that is a per-user choice, not a requirement.
 
 ## Identity join — `campaign/players.json`
 
@@ -51,7 +51,11 @@ The single place where the three namespaces meet. Everything downstream assumes 
     {
       "id": "pl_maddie",
       "display_name": "Maddie",
-      "discord": { "user_id": "204...", "username": "maddiecodes", "craig_track_hints": ["maddie"] },
+      "discord": {
+        "user_id": "204...",
+        "username": "maddiecodes",
+        "craig_track_hints": ["maddie"]
+      },
       "roll20": { "account_name": "Maddie R.", "player_ids": ["-N9x..."] },
       "is_dm": false,
       "characters": [
@@ -81,13 +85,26 @@ Intake fuzzy-matches Craig track filenames and Roll20 account names against this
   "session_id": "2026-08-16-s42",
   "recording": { "started_at": "2026-08-16T23:04:11Z", "duration_s": 14682.3, "source": "craig" },
   "tracks": [
-    { "track_id": "t1", "path": "input/craig/1-maddiecodes.flac", "player_id": "pl_maddie",
-      "sha256": "…", "duration_s": 14682.3, "sample_rate": 48000, "channels": 2,
-      "speech_ratio": 0.18, "aligned": true }
+    {
+      "track_id": "t1",
+      "path": "input/craig/1-maddiecodes.flac",
+      "player_id": "pl_maddie",
+      "sha256": "…",
+      "duration_s": 14682.3,
+      "sample_rate": 48000,
+      "channels": 2,
+      "speech_ratio": 0.18,
+      "aligned": true
+    }
   ],
-  "roll20": { "path": "input/roll20/roll20-capture.json", "sha256": "…",
-              "message_count": 1841, "roll_count": 612, "capture_mode": "live",
-              "time_basis": "wallclock" },
+  "roll20": {
+    "path": "input/roll20/roll20-capture.json",
+    "sha256": "…",
+    "message_count": 1841,
+    "roll_count": 612,
+    "capture_mode": "live",
+    "time_basis": "wallclock"
+  },
   "qa": { "errors": [], "warnings": ["track t4 speech_ratio 0.002 — was this player present?"] }
 }
 ```
@@ -101,12 +118,17 @@ The merged, ordered timeline. One record per utterance, an utterance being a VAD
 ```json
 {
   "utterances": [
-    { "id": "u000412", "track_id": "t1", "player_id": "pl_maddie",
-      "start_s": 3241.88, "end_s": 3247.02,
+    {
+      "id": "u000412",
+      "track_id": "t1",
+      "player_id": "pl_maddie",
+      "start_s": 3241.88,
+      "end_s": 3247.02,
       "text": "I don't like this. We should leave before it wakes.",
       "words": [{ "t": "I", "s": 3241.88, "e": 3241.99 }],
       "asr": { "backend": "mlx-whisper", "model": "large-v3", "avg_logprob": -0.21 },
-      "overlap_ids": ["u000413"] }
+      "overlap_ids": ["u000413"]
+    }
   ]
 }
 ```
@@ -116,17 +138,29 @@ The merged, ordered timeline. One record per utterance, an utterance being a VAD
 ```json
 {
   "attributions": [
-    { "utterance_id": "u000412", "mode": "in_character", "character_id": "ch_seren",
+    {
+      "utterance_id": "u000412",
+      "mode": "in_character",
+      "character_id": "ch_seren",
       "confidence": 0.91,
-      "evidence": { "voice_sim": 0.83, "lex_ic": 0.4, "lex_ooc": 0.0, "roll_prox": false,
-                    "prosody_z": 1.7 },
-      "flags": [] },
-    { "utterance_id": "u000413", "mode": "uncertain", "character_id": null,
+      "evidence": {
+        "voice_sim": 0.83,
+        "lex_ic": 0.4,
+        "lex_ooc": 0.0,
+        "roll_prox": false,
+        "prosody_z": 1.7
+      },
+      "flags": []
+    },
+    {
+      "utterance_id": "u000413",
+      "mode": "uncertain",
+      "character_id": null,
       "confidence": 0.44,
-      "flags": [{ "code": "persona_ambiguous", "reason": "voice_sim below margin (0.61 vs 0.58)" }] }
+      "flags": [{ "code": "persona_ambiguous", "reason": "voice_sim below margin (0.61 vs 0.58)" }]
+    }
   ],
-  "summary": { "in_character": 1204, "out_of_character": 2891, "uncertain": 173,
-               "unknown_npc": 41 }
+  "summary": { "in_character": 1204, "out_of_character": 2891, "uncertain": 173, "unknown_npc": 41 }
 }
 ```
 
@@ -137,16 +171,31 @@ The merged, ordered timeline. One record per utterance, an utterance being a VAD
 ```json
 {
   "beats": [
-    { "id": "b07", "kind": "combat", "start_s": 4102.0, "end_s": 5233.5,
+    {
+      "id": "b07",
+      "kind": "combat",
+      "start_s": 4102.0,
+      "end_s": 5233.5,
       "title": "Ambush at the ford",
       "participants": ["ch_seren", "npc_bandit_captain"],
       "encounter": {
         "rounds": [
-          { "n": 1, "turns": [
-            { "actor": "ch_seren", "rolls": ["r0412"],
-              "narration_utterances": ["u000512", "u000514"],
-              "summary_source": "deterministic" } ] } ] },
-      "utterance_ids": ["u000512"], "roll_ids": ["r0412"] }
+          {
+            "n": 1,
+            "turns": [
+              {
+                "actor": "ch_seren",
+                "rolls": ["r0412"],
+                "narration_utterances": ["u000512", "u000514"],
+                "summary_source": "deterministic"
+              }
+            ]
+          }
+        ]
+      },
+      "utterance_ids": ["u000512"],
+      "roll_ids": ["r0412"]
+    }
   ]
 }
 ```
@@ -156,12 +205,18 @@ Every beat, round and turn references the utterance and roll ids it was built fr
 ## Stage sidecar file — `_stage.json`
 
 ```json
-{ "stage": "transcript", "version": 3, "status": "ok",
+{
+  "stage": "transcript",
+  "version": 3,
+  "status": "ok",
   "inputs": { "work/01-intake/manifest.json": "sha256:…" },
   "params_hash": "sha256:…",
-  "started_at": "…", "finished_at": "…", "duration_s": 812.4,
+  "started_at": "…",
+  "finished_at": "…",
+  "duration_s": 812.4,
   "sidecar": { "version": "0.3.1", "asr_backend": "mlx-whisper", "model": "large-v3" },
-  "counts": { "utterances": 4268 } }
+  "counts": { "utterances": 4268 }
+}
 ```
 
 A stage re-runs when any input hash, the stage version, or the params hash differs — or when `--force` is passed. `--force` is always available; no stage may refuse to run because it "already ran".

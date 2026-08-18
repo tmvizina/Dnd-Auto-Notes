@@ -12,9 +12,11 @@ commit: ""
 ---
 
 ## Why
+
 JSON on disk is the source of truth, but the app needs to list sessions, show run history, and query flagged spans without opening every artifact. The database is an index and a ledger — and it must never become a second source of truth.
 
 ## Do
+
 1. `better-sqlite3`, WAL, `foreign_keys = ON`, idempotent `schema.sql` of `CREATE TABLE IF NOT EXISTS`, plus additive-only `ALTER TABLE ADD COLUMN` migrations. Ids are prefixed (`run_ab12cd34`).
 2. Tables:
    - `sessions` — id, title, number, date, folder path, status, counts, timestamps.
@@ -27,6 +29,7 @@ JSON on disk is the source of truth, but the app needs to list sessions, show ru
 5. Never store secrets; provider credentials are env or keychain references only.
 
 ## Acceptance
+
 - [ ] Opening a fresh database creates the schema; opening it again is a no-op.
 - [ ] An additive migration applies to an older database without data loss.
 - [ ] `reindexSession` reproduces identical rows after the database file is deleted.
@@ -35,4 +38,5 @@ JSON on disk is the source of truth, but the app needs to list sessions, show ru
 - [ ] No table is ever the only home of a piece of information.
 
 ## Notes
+
 Exactly one process opens this file. A second writer silently loses rows and makes reads report corruption — this is a scar from Audio Forge, not a theory. The sidecar never touches it.

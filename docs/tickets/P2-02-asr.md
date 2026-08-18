@@ -13,9 +13,11 @@ commit: ""
 ---
 
 ## Why
+
 Everything textual downstream — lexical rules, roll anchoring, quotes in the notes — is only as good as the transcript. Word-level timestamps specifically are what let a roll announcement be matched to the moment it was said.
 
 ## Do
+
 1. `POST /transcribe` (job): `{ track_path, segments, backend, model, params }` returns `[{ start_s, end_s, text, words: [{t, s, e}], avg_logprob, no_speech_prob }]` with times in **track-absolute seconds**, not segment-relative.
 2. Pluggable backends behind one interface, selected by config and gated on `/health` capabilities:
    - `mlx-whisper` — the M1 Max path, Metal-accelerated;
@@ -28,6 +30,7 @@ Everything textual downstream — lexical rules, roll anchoring, quotes in the n
 7. Per-segment failures are recorded and skipped, never fatal to the job.
 
 ## Acceptance
+
 - [ ] Word timestamps are track-absolute and monotonically increasing.
 - [ ] The same audio transcribed twice is byte-identical.
 - [ ] All three backends produce the same schema; a missing backend fails with a message naming the install command.
@@ -36,4 +39,5 @@ Everything textual downstream — lexical rules, roll anchoring, quotes in the n
 - [ ] A four-hour session's speech transcribes within the budget recorded in `P5-02`.
 
 ## Notes
+
 Audio Forge's `worker/audioforge_worker/asr.py` is the reference for the deterministic settings and the lazy singleton; extend it with backend selection rather than reinventing it.

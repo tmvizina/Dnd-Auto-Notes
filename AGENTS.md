@@ -28,7 +28,7 @@ Your ticket lists `scope:` paths. That is your boundary. If the work genuinely r
 - **Python**: 3.11+, `from __future__ import annotations`, type hints on public functions, `ruff` clean. Pure logic separated from model glue — model imports are lazy so the pure functions stay unit-testable on a machine with no GPU and no models installed. Follow the shape of `Audio-Forge-/worker/audioforge_worker/diarize.py`.
 - **Paths**: always `path.join` / `pathlib.Path`. No hard-coded `/` or `C:\`. The primary target is macOS; Windows must not break.
 - **Determinism**: given identical inputs, a stage produces byte-identical output. Fixed seeds, sorted iteration, no wall-clock in output payloads except the explicit timestamp fields.
-- **Comments** explain *why*, not *what*. Match the density of the surrounding file.
+- **Comments** explain _why_, not _what_. Match the density of the surrounding file.
 
 ## Testing
 
@@ -44,12 +44,15 @@ Git mutations must be separate tool invocations — never chained with `;`, `&&`
 ```bash
 git add -- <files>
 ```
+
 ```bash
 git diff --cached --check
 ```
+
 ```bash
 git diff --cached --stat
 ```
+
 ```bash
 git commit -m "P1-03: craig intake"
 ```

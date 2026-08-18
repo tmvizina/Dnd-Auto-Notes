@@ -14,9 +14,11 @@ commit: ""
 ---
 
 ## Why
+
 This is the decision the whole project exists to make. It has to be explainable, tunable, and honest about what it does not know — a confident wrong label is worse than an admitted uncertainty, because only one of those gets fixed.
 
 ## Do
+
 1. Assemble a feature vector per utterance from the earlier stages: `voice_sim_table`, `voice_sim_best_character`, `voice_margin`, `prosody_z`, `lex_ooc`, `lex_ic`, `roll_prox` (a roll by this player within the anchoring window), `chat_prox`, `addressee`, `duration`, `is_backchannel`, `overlap`.
 2. `score_ic = sigmoid(w · f)` with weights in a versioned config file, not in code. Ship hand-set initial weights derived from the signal strengths, and make the file the thing `P2-12` tunes.
 3. Decision bands: `>= hi` in character, `<= lo` out of character, otherwise `uncertain` — with the specific reason recorded (`voice_margin_low`, `lex_conflict`, `too_short`, `no_profile_match`, `overlapped`).
@@ -26,6 +28,7 @@ This is the decision the whole project exists to make. It has to be explainable,
 7. Write `work/04-persona/attribution.json` with full evidence per utterance and a summary block, and mirror open flags into the `flags` table.
 
 ## Acceptance
+
 - [ ] Weights and thresholds live in a versioned config file; changing them requires no code edit and bumps the stage version.
 - [ ] Every attribution carries the evidence that produced it.
 - [ ] Every uncertain attribution carries a specific reason code.

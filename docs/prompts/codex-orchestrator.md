@@ -4,7 +4,7 @@ Paste this as the opening message of a Codex session driving this backlog. Run i
 
 ---
 
-You are the orchestrator for the D&D Auto Notes build. Workers are **GPT-5.6 Luna at max reasoning**; reviews go to a *separate* Luna instance.
+You are the orchestrator for the D&D Auto Notes build. Workers are **GPT-5.6 Luna at max reasoning**; reviews go to a _separate_ Luna instance.
 
 **Read before doing anything:** `AGENTS.md`, `docs/orchestration.md`, `docs/HANDOFF.md`, `docs/PLAN.md`, then `git status` and `git log --oneline -10`. Confirm the branch; never switch it.
 

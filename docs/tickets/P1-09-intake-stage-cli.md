@@ -13,9 +13,11 @@ commit: ""
 ---
 
 ## Why
+
 This is the first end-to-end path: two dropped files become a validated manifest. It is also the command every later stage plugs into, so its argument surface and progress reporting set the pattern.
 
 ## Do
+
 1. `packages/core/src/stages/intake.ts` composes Craig intake, Roll20 parsing and timestamp resolution, and the campaign join into `work/01-intake/manifest.json` through `runStage`.
 2. Join rolls to players via the registry, producing `rolls[].player_id`. Rolls whose Roll20 account is unmapped keep `player_id: null` and raise a QA error.
 3. `pipeline` CLI:
@@ -28,6 +30,7 @@ This is the first end-to-end path: two dropped files become a validated manifest
 6. Resolve a session by id, by folder path, or `--latest`.
 
 ## Acceptance
+
 - [ ] `pipeline session new` then `pipeline run --stage intake` on the synthetic fixture produces a valid manifest.
 - [ ] A second identical run reports `skipped` for intake and finishes in under a second.
 - [ ] `--force` re-runs it.
@@ -36,6 +39,7 @@ This is the first end-to-end path: two dropped files become a validated manifest
 - [ ] The CLI works from any working directory.
 
 ## Verify
+
 ```bash
 node tools/generate-fixture.mjs --out sessions/fixture-a && npx pipeline run --session fixture-a --stage intake --json
 ```

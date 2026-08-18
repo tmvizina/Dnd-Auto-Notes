@@ -12,9 +12,11 @@ commit: ""
 ---
 
 ## Why
+
 The parsed roll stream is what makes combat reconstruction possible and what anchors the Roll20 timeline to the audio. It is also the part most likely to break when Roll20 ships a UI change, so it needs to be pure, fixture-driven, and replayable against stored raw HTML.
 
 ## Do
+
 1. Accept both input shapes: `roll20-capture.json` from `P1-04` and a saved chat-archive HTML page. Normalise both into one internal message list before parsing.
 2. Parse each message into a discriminated union: `chat`, `emote`, `whisper`, `description`, `roll`, `system`, `turnorder`.
 3. Roll parsing produces `{ id, seq, who, player_id, formula, dice: [{ sides, value, dropped }], modifiers, total, kind }` where `kind` is inferred from the roll template and text: `attack`, `damage`, `save`, `check`, `initiative`, `death_save`, `other`. Support inline rolls, `/roll` output, and 5e roll templates (`sheet-rolltemplate-atk`, `-dmg`, `-simple`, `-npcaction`, and the unknown-template fallback).
@@ -25,6 +27,7 @@ The parsed roll stream is what makes combat reconstruction possible and what anc
 8. Anything unrecognised becomes `kind: "other"` with the raw text preserved and a counter in the QA report. Unrecognised input is never dropped.
 
 ## Acceptance
+
 - [ ] All fixture message kinds parse into the right variant.
 - [ ] An attack roll with advantage yields both d20 values and the used one.
 - [ ] A damage roll with a dropped die records `dropped: true` on the right die.
@@ -34,4 +37,5 @@ The parsed roll stream is what makes combat reconstruction possible and what anc
 - [ ] The parser is pure: no filesystem, no network, no clock.
 
 ## Notes
+
 Roll20 message ids are the join key used by `P1-06`; never renumber or synthesise them.

@@ -14,9 +14,11 @@ commit: ""
 ---
 
 ## Why
+
 Thresholds guessed in code are thresholds that are wrong. Twenty minutes of hand labelling per campaign turns every weight in the scorer from a guess into a measurement, and gives the profile bank its first real anchors.
 
 ## Do
+
 1. `pipeline label --session <id> [--minutes 15] [--strategy uncertain|stratified|sequential]` walks utterances in the terminal, playing each clip through the platform audio player, and records `{ utterance_id, mode, character_id, labeller, at }` to `campaign/labels/<session>.jsonl`, append-only.
 2. Sampling strategies: `uncertain` (highest-entropy first, best value per minute), `stratified` (proportional across players and modes, best for unbiased metrics), `sequential` (a contiguous slice, best for the profile bank).
 3. Resumable and interruptible: the file is append-only, and a re-run skips what is already labelled unless `--relabel`.
@@ -26,6 +28,7 @@ Thresholds guessed in code are thresholds that are wrong. Twenty minutes of hand
 7. Refuse to fit below a minimum label count, and say how many more are needed.
 
 ## Acceptance
+
 - [ ] Labelling 50 utterances and re-running skips them.
 - [ ] All three sampling strategies work and are documented for when to use which.
 - [ ] Calibration produces a new weights file and never mutates the old one.

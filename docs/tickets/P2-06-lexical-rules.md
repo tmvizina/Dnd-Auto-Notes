@@ -14,9 +14,11 @@ commit: ""
 ---
 
 ## Why
+
 Acoustics tell you a voice changed; words tell you what it changed into. "Does a nineteen hit?" is out of character no matter how it is delivered, and a rules engine catches that with certainty an embedding never will.
 
 ## Do
+
 1. A weighted marker engine over utterance text producing `lex_ooc` and `lex_ic` densities plus the specific markers that fired, so every decision is explainable.
 2. Out-of-character marker classes, shipped as a default lexicon and extensible per campaign:
    - dice and mechanics — `d20`, `natural twenty`, `advantage`, `initiative`, `AC`, `hit points`, `saving throw`, `crit`, `modifier`;
@@ -30,6 +32,7 @@ Acoustics tell you a voice changed; words tell you what it changed into. "Does a
 7. Everything pure and table-driven; no model, no network, no clock.
 
 ## Acceptance
+
 - [ ] Each marker class fires on its fixture cases and not on the counterexamples.
 - [ ] Quoted speech inside a narration utterance is located with word-time spans.
 - [ ] Spoken numbers match digit forms.

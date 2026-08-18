@@ -13,9 +13,11 @@ commit: ""
 ---
 
 ## Why
+
 The orchestrator needs to answer "what is ready to assign" mechanically rather than by reading forty files, and needs one place where the state of the build is written down truthfully between sessions.
 
 ## Do
+
 1. `tools/tickets.mjs` parses the YAML frontmatter of every `docs/tickets/P*.md` and supports:
    - `--status` — table of id, phase, status, assignee, blocked reason.
    - `--ready` — `status: todo` tickets whose `depends_on` are all `done`.
@@ -24,12 +26,14 @@ The orchestrator needs to answer "what is ready to assign" mechanically rather t
 3. Create `docs/HANDOFF.md` with: current state, a commit checkpoint table (`| SHA | Ticket | Scope | Validated |`), known risks, and **exact next actions** as a numbered list.
 
 ## Acceptance
+
 - [ ] `--ready` lists exactly the tickets with satisfied dependencies.
 - [ ] `--check` detects an injected cycle and an unknown dependency id.
 - [ ] Overlapping scope between two `in_progress` tickets is reported.
 - [ ] `docs/HANDOFF.md` exists with all four sections.
 
 ## Verify
+
 ```bash
 npm run tickets -- --check && npm run tickets -- --ready
 ```

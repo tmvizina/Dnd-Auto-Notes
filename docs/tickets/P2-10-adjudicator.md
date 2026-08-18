@@ -13,9 +13,11 @@ commit: ""
 ---
 
 ## Why
+
 A few hundred spans per session will genuinely be ambiguous — a whispered aside, a player who barely changes voice, an NPC introduced by pronoun. An LLM given the surrounding minute of transcript and a closed set of candidate labels is good at exactly that, and useless at labelling four thousand utterances from scratch.
 
 ## Do
+
 1. `LlmProvider` interface: `complete({ system, prompt, schema, signal })` returning parsed JSON plus usage, with a `capabilities()` probe. Implementations:
    - `cli-claude` — spawn `claude -p --output-format stream-json --verbose --permission-mode <mode>`, **prompt over stdin**, parse the NDJSON stream, take the `result` event;
    - `cli-codex` — `codex exec --json`, prompt over stdin, same normalisation;
@@ -29,6 +31,7 @@ A few hundred spans per session will genuinely be ambiguous — a whispered asid
 7. Cancellation propagates: killing the run kills the child process.
 
 ## Acceptance
+
 - [ ] All four providers satisfy the interface; `none` is the default.
 - [ ] The full pipeline completes with `none` and every flag intact.
 - [ ] A malformed CLI stream produces a structured error, not a crash.

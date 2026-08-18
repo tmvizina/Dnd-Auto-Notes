@@ -12,9 +12,11 @@ commit: ""
 ---
 
 ## Why
+
 Every failure mode in this project is silent. A wrong track binding, a missing player, a Roll20 capture from the wrong evening — none of these throw, they just produce confident nonsense four stages later. The QA report is where they surface while they are still cheap to fix.
 
 ## Do
+
 1. A `QaReport` of `{ code, severity: "error"|"warning"|"info", message, subject, hint }` entries, with stable codes.
 2. Intake checks:
    - `TRACK_UNMAPPED` (error) — a Craig track with no player, listing top candidates.
@@ -30,6 +32,7 @@ Every failure mode in this project is silent. A wrong track binding, a missing p
 5. Errors set exit code 2 for the whole run; warnings do not.
 
 ## Acceptance
+
 - [ ] Each code above fires on a purpose-built fixture and on none of the clean ones.
 - [ ] Every entry has an actionable hint naming a file and a field.
 - [ ] The clean synthetic fixture produces zero errors.

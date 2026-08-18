@@ -12,9 +12,11 @@ commit: ""
 ---
 
 ## Why
+
 The UI should not know or care that it is inside Electron. A transport abstraction keeps components testable in a plain browser and leaves a headless HTTP mode available later without a rewrite.
 
 ## Do
+
 1. `app/ui` — React 18 plus Vite, hash routing, no router library.
 2. `createTransport()` detects the preload bridge and returns the Electron transport; otherwise a stub that throws `unavailable("<operation>")` for every call. It must never silently fall back to `localhost`.
 3. Shell: a left rail (Sessions, Review, Notes, Settings), a header with the current session, and a status strip showing sidecar health, active runs and provider availability.
@@ -23,6 +25,7 @@ The UI should not know or care that it is inside Electron. A transport abstracti
 6. Every list is virtualised past a few hundred rows — a session has thousands of utterances.
 
 ## Acceptance
+
 - [ ] The app renders in the packaged shell and in a plain browser (with operations reporting unavailable).
 - [ ] All four routes reachable; deep links restore on reload.
 - [ ] The status strip reflects real sidecar health.

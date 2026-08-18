@@ -12,9 +12,11 @@ commit: ""
 ---
 
 ## Why
+
 One list, run before every release, so a version is never shipped that quietly lost a capability.
 
 ## Do
+
 1. `docs/release-checklist.md` covering:
    - full test suite green on both CI legs;
    - a packaged build installs and launches on a clean machine;
@@ -29,6 +31,7 @@ One list, run before every release, so a version is never shipped that quietly l
 3. Tag the release and write release notes from the ticket commits.
 
 ## Acceptance
+
 - [ ] The checklist exists and has been executed once in full.
 - [ ] Results are recorded with real numbers, not assertions.
 - [ ] Any failed item has a filed ticket before release.

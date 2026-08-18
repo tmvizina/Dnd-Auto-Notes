@@ -13,9 +13,11 @@ commit: ""
 ---
 
 ## Why
+
 This is the deliverable. Everything before it exists to make this file accurate, and the rendering must not add a single claim the pipeline cannot support.
 
 ## Do
+
 1. Render `session.md` deterministically from `events.json`. Sections:
    - front matter: session number, date, duration, players present, characters present;
    - **Summary** — 5 to 10 sentences assembled from beat titles and outcomes;
@@ -34,6 +36,7 @@ This is the deliverable. Everything before it exists to make this file accurate,
 6. Stable output: re-rendering unchanged input produces a byte-identical file, so `git diff` on notes shows real changes only.
 
 ## Acceptance
+
 - [ ] Rendering the fixture produces every section with correct content.
 - [ ] The grounding test proves every statement resolves to referenced event ids.
 - [ ] Out-of-character speech never appears in dialogue sections.

@@ -13,9 +13,11 @@ commit: ""
 ---
 
 ## Why
+
 A four-hour session is a lot of audio. Without measured budgets, "it takes a while" gradually becomes "it takes overnight" and nobody notices which stage caused it.
 
 ## Do
+
 1. Set budgets on the M1 Max for a four-hour, five-track session, measured before being declared:
    - intake under 2 minutes;
    - VAD under 5 minutes;
@@ -29,6 +31,7 @@ A four-hour session is a lot of audio. Without measured budgets, "it takes a whi
 5. Document the measurement protocol precisely enough to reproduce, including how to read process memory, and mark an unmeasurable run `N/A` with the reason rather than recording a zero.
 
 ## Acceptance
+
 - [ ] Every stage has a measured budget in `docs/performance.md`.
 - [ ] `tools/bench.mjs --compare` detects a deliberately introduced 2x regression.
 - [ ] Peak resident memory stays under the ceiling on the real session.

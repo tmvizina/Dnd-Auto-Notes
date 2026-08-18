@@ -13,9 +13,11 @@ commit: ""
 ---
 
 ## Why
+
 "What happened this session" is a sequence of scenes, not a transcript. Beat boundaries are what turn four hours of events into a readable outline, and they can be found from structure rather than from meaning.
 
 ## Do
+
 1. Score candidate boundaries from deterministic signals, each contributing weighted evidence:
    - a silence gap over `BEAT_GAP_S`;
    - a turn-order transition — combat start and end are almost always beat boundaries;
@@ -31,6 +33,7 @@ commit: ""
 6. `table` beats are retained and marked, not deleted. A twenty-minute rules argument belongs in the record as a line, not as a silently missing half hour.
 
 ## Acceptance
+
 - [ ] Combat beats align to turn-order boundaries within one event.
 - [ ] Beat count on the fixture is within 20 % of `truth.json`, with no beat under the minimum duration.
 - [ ] Classification matches the fixture's labels.

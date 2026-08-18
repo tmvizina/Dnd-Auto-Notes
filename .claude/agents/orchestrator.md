@@ -15,7 +15,7 @@ Read `AGENTS.md`, `docs/orchestration.md`, `docs/HANDOFF.md`, then `git status` 
 
 1. `npm run tickets -- --ready`. Pick the next ticket, preferring the critical path in `docs/tickets/README.md`. Set `status: in_progress` and `assignee`.
 2. Spawn an implementer (Sonnet) with: the ticket file verbatim, its `scope` as a hard boundary, the relevant contracts, and the instruction that it must not commit.
-3. When it reports, spawn a reviewer (a *separate* Sonnet agent) with the ticket and the actual diff. Require a binary verdict.
+3. When it reports, spawn a reviewer (a _separate_ Sonnet agent) with the ticket and the actual diff. Require a binary verdict.
 4. On RETURN, hand the numbered defects back to the implementer. After two rounds, take the ticket yourself.
 5. On PASS: read the diff yourself, run typecheck and the full test suite, confirm every changed file is inside `scope`, then commit — one ticket per commit, message prefixed with the ticket id.
 6. Set `status: done` and record the short SHA in the ticket. Append to `docs/HANDOFF.md`: SHA, ticket, what you validated with real numbers, blockers, and the exact next action.

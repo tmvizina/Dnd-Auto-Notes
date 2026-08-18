@@ -14,9 +14,11 @@ commit: ""
 ---
 
 ## Why
+
 The notes look equally confident whether the pipeline understood 95 % of the session or 60 % of it. The QA report is the only thing that tells the difference, and it is what makes the output trustworthy rather than merely plausible.
 
 ## Do
+
 1. Compute and report:
    - transcript coverage — speech seconds transcribed over speech seconds detected;
    - attribution coverage — in-character utterances with a character over all in-character utterances;
@@ -31,6 +33,7 @@ The notes look equally confident whether the pipeline understood 95 % of the ses
 5. Exit code 2 when the grade is D, so automation notices.
 
 ## Acceptance
+
 - [ ] Every metric is computed and reported on the fixture.
 - [ ] The grading rule is documented and reproducible by hand.
 - [ ] The headline and uncertainties appear in `session.md`.

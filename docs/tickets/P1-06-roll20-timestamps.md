@@ -14,9 +14,11 @@ commit: ""
 ---
 
 ## Why
+
 If Roll20 events carry real wall-clock time, aligning them to the audio is arithmetic. If they do not, alignment becomes a search problem (`P2-09`). Which world we are in changes the design of two later tickets, so it gets decided with evidence now.
 
 ## Do
+
 1. **Spike first.** Take a real capture and determine empirically whether current Roll20 `data-messageid` values are Firebase-style push keys whose leading characters encode a millisecond timestamp. Decode the candidate prefix with the push-key alphabet and check the results against a live capture's own wall-clock stamps from `P1-04` live mode. Write the finding — including the negative case — to `docs/spikes/roll20-timestamps.md`.
 2. Implement `resolveTimeBasis(capture)` returning one of:
    - `wallclock` — live-mode stamps present; use them directly;
@@ -27,6 +29,7 @@ If Roll20 events carry real wall-clock time, aligning them to the audio is arith
 5. Convert wall-clock to audio-relative seconds using the Craig recording start, and record the offset explicitly so `P2-09` can refine it.
 
 ## Acceptance
+
 - [ ] The spike document states the answer with the evidence that produced it.
 - [ ] All three bases are implemented and unit-tested against fixtures.
 - [ ] A decoded timestamp that violates monotonicity downgrades the basis rather than producing garbage times.
@@ -34,4 +37,5 @@ If Roll20 events carry real wall-clock time, aligning them to the audio is arith
 - [ ] `order_only` captures still produce a usable ordering with `t_wall_ms: null` throughout.
 
 ## Notes
+
 Do not let this ticket block: `order_only` is a fully supported path, and `P2-09` is designed to work without absolute time.

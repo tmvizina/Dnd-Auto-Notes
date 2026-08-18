@@ -13,9 +13,11 @@ commit: ""
 ---
 
 ## Why
+
 Per-track transcripts are not a session. The merged, ordered timeline is the object every later stage reasons over, and how overlaps are handled decides whether a crosstalk-heavy table reads as a conversation or as mush.
 
 ## Do
+
 1. Compose VAD and ASR across all tracks into `work/02-transcript/utterances.json` through `runStage`.
 2. Assign stable ids (`u000412`) ordered by start time, with track id as the tiebreaker so ids are reproducible.
 3. Overlap detection: mark utterances that overlap another track's utterance by more than `OVERLAP_MIN_S`, recording `overlap_ids`. Do not drop or merge them — simultaneous speech is real, and combat tables do it constantly.
@@ -25,6 +27,7 @@ Per-track transcripts are not a session. The merged, ordered timeline is the obj
 7. Emit counts and total speech per player.
 
 ## Acceptance
+
 - [ ] Merged order matches `truth.json` ordering exactly on the fixture.
 - [ ] Overlaps are marked on both sides and never dropped.
 - [ ] A synthesised bleed case is detected, the primary kept, and a QA warning raised.

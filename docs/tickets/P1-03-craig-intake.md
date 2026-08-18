@@ -12,9 +12,11 @@ commit: ""
 ---
 
 ## Why
+
 Speaker identity is the one thing this project gets for free, and it comes entirely from parsing Craig's output correctly. If a track binds to the wrong player, every downstream attribution is wrong and nothing later will catch it.
 
 ## Do
+
 1. Accept either an extracted folder or the downloaded archive in `input/craig/`. If it is an archive, extract to `input/craig/extracted/` once and record that in the manifest; never re-extract on a re-run unless the archive hash changed.
 2. Discover tracks by extension (`.flac`, `.aac`, `.m4a`, `.mp3`, `.ogg`, `.wav`). Parse the Craig filename convention `<index>-<username>[_<discriminator>].<ext>` into `{ index, username, discriminator }`, tolerating unicode display names and unexpected separators — an unparseable name is a warning that falls back to the raw stem, not a crash.
 3. Parse `info.txt` when present for recording start time, guild/channel, and the participant list; treat every field as optional.
@@ -25,6 +27,7 @@ Speaker identity is the one thing this project gets for free, and it comes entir
 8. sha256 every track (streamed) into the manifest.
 
 ## Acceptance
+
 - [ ] The synthetic fixture produces one manifest track per generated file with correct durations.
 - [ ] Filename parsing covers the Craig convention plus three malformed cases without throwing.
 - [ ] A duration outlier sets `aligned: false` and names the outlier track.
@@ -33,4 +36,5 @@ Speaker identity is the one thing this project gets for free, and it comes entir
 - [ ] Re-running with unchanged inputs re-extracts nothing and rewrites nothing.
 
 ## Notes
+
 Craig's multi-track download aligns all tracks to the recording start; that assumption is load-bearing, which is why step 6 verifies it rather than trusting it.

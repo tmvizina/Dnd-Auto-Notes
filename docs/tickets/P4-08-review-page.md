@@ -14,9 +14,11 @@ commit: ""
 ---
 
 ## Why
+
 This page is where the system learns. Every correction here both fixes this session's notes and improves the campaign voice bank, which is the only mechanism by which accuracy compounds across sessions.
 
 ## Do
+
 1. List open flags grouped by code, sorted by impact (how much speech time the decision affects). Each row: timestamp, speaker, transcript text, candidate labels with scores, and the evidence that made it uncertain.
 2. **Lazy audio.** `ClipPlayer` sets no `src` until the user presses play, releases the object URL on pause or unmount, and allows at most one playing clip at a time. Non-negotiable: an eager list of decoded clips will exhaust memory and lock the machine.
 3. Clip extraction on demand into `media/clips/`, cached, with a retention cap.
@@ -27,6 +29,7 @@ This page is where the system learns. Every correction here both fixes this sess
 8. **After a voice-profile change, offer to re-run persona attribution for the affected utterances.** A stale attribution left beside an updated profile is how a fix silently reverts.
 
 ## Acceptance
+
 - [ ] No `<audio>` element has a `src` before play is pressed, proven by a DOM test.
 - [ ] Memory is flat after playing 100 clips sequentially.
 - [ ] Resolving a flag updates the attribution, the flag row and the label file.

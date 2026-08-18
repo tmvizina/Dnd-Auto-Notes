@@ -14,9 +14,11 @@ commit: ""
 ---
 
 ## Why
+
 Text alone cannot tell you that a player just dropped into their character's voice. The acoustic evidence is the strongest single signal for in-character detection, and it is what makes the DM's dozen NPCs separable at all.
 
 ## Do
+
 1. `POST /features` (job): `{ track_path, utterances }` returns per utterance an embedding plus prosody features.
 2. Embedding: ECAPA-TDNN via speechbrain, or WavLM-based x-vectors if the bake-off in `P2-05` prefers it. L2-normalised, dimension recorded in the result.
 3. Prosody, computed per utterance and also z-scored against that player's own session-wide baseline: F0 mean, F0 std, F0 range, speaking rate (words per second from ASR word times), mean intensity, intensity std, spectral tilt, jitter proxy, and pause ratio.
@@ -26,6 +28,7 @@ Text alone cannot tell you that a player just dropped into their character's voi
 7. Batch on the GPU/MPS and report throughput.
 
 ## Acceptance
+
 - [ ] Every utterance above the duration floor has an embedding and a full prosody vector.
 - [ ] Embeddings are L2-normalised and deterministic for identical audio.
 - [ ] Z-scoring is per player, not global.

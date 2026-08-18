@@ -16,9 +16,11 @@ commit: ""
 ---
 
 ## Why
+
 Nothing else can be built or tested until the workspace layout, module system and TypeScript settings are fixed. Getting this wrong later means touching every package.
 
 ## Do
+
 1. Root `package.json`: private, `"type": "module"`, npm workspaces `["packages/core", "packages/cli", "app/desktop", "app/ui"]`. Only create `packages/*` now; the `app/*` entries land in phase 4 and an absent workspace is tolerated.
 2. Scripts: `typecheck`, `test`, `build`, `lint`, `format`, `pipeline` (delegates to `packages/cli`), `session:new`.
 3. `tsconfig.base.json`: ES2022, NodeNext module + resolution, `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noEmit`. Each workspace extends it and adds its own `tsconfig.build.json` with `outDir`/`rootDir`.
@@ -28,6 +30,7 @@ Nothing else can be built or tested until the workspace layout, module system an
 7. `packages/cli` exposes a `pipeline` bin stub that prints its resolved config and exits 0.
 
 ## Acceptance
+
 - [x] `npm install` succeeds on a clean checkout on macOS and Windows.
 - [x] `npm run typecheck` passes with zero errors.
 - [x] `npm run build` emits `packages/*/dist`.
@@ -35,11 +38,13 @@ Nothing else can be built or tested until the workspace layout, module system an
 - [x] No workspace imports another by relative path, only by package name.
 
 ## Verify
+
 ```bash
 npm install && npm run typecheck && npm run build && npx pipeline --help
 ```
 
 ## Notes
+
 Mirror the workspace + ESM setup in `Manuscript-Work/package.json`, including its Windows-explicit `npm.cmd` in fan-out scripts.
 
 ## Delivered

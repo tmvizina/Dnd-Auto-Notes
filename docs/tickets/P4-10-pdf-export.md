@@ -13,9 +13,11 @@ commit: ""
 ---
 
 ## Why
+
 The notes get shared with the table, and a PDF is what people actually read. It needs to look like a document, not like a rendered README.
 
 ## Do
+
 1. Render the markdown to styled HTML in an offscreen `BrowserWindow` and export with `webContents.printToPDF`.
 2. Print stylesheet: a real title page with session number, date and party; running headers; page numbers; sensible page breaks that never orphan a beat heading from its body; monospace only where it belongs.
 3. Options: include or omit table notes, out-of-character content, the uncertainties section, and the roll appendix. Defaults suit sharing with players — narrative in, machinery out.
@@ -24,6 +26,7 @@ The notes get shared with the table, and a PDF is what people actually read. It 
 6. Export is cancellable and reports progress for long documents.
 
 ## Acceptance
+
 - [ ] A 40-page session exports with correct pagination and headers.
 - [ ] Each option changes the output as described.
 - [ ] No beat heading is orphaned at a page break.

@@ -13,9 +13,11 @@ commit: ""
 ---
 
 ## Why
+
 Rolls carry the mechanical truth of the session and speech carries the narrative truth. They are only useful together, and joining them needs a shared time axis. When Roll20 gives no wall clock, that axis has to be recovered from what people said.
 
 ## Do
+
 1. Both sequences are monotonic in time, which is the whole leverage. Align them with a Needleman-Wunsch style dynamic program under a strict monotonicity constraint, producing anchors, not a fuzzy nearest-neighbour join.
 2. Candidate match score between roll `r` and utterance `u`:
    - **number agreement** — the roll total, or a die face, spoken in `u` (spoken-number normalisation from `P2-06`). This is the dominant term; people announce their results.
@@ -29,6 +31,7 @@ Rolls carry the mechanical truth of the session and speech carries the narrative
 7. Emit an alignment quality report: anchored fraction, median residual, largest unanchored gap.
 
 ## Acceptance
+
 - [ ] On the fixture, rolls anchor to the utterances that announce them, matching `truth.json`.
 - [ ] `order_only` captures still anchor above the recorded fraction using number and speaker agreement alone.
 - [ ] Monotonicity is never violated in the output.

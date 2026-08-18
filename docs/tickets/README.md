@@ -1,6 +1,6 @@
 # Tickets
 
-One file per ticket, named `<id>-<slug>.md`. The file *is* the state — there is no separate board. Status changes are ordinary edits and show up in `git log`.
+One file per ticket, named `<id>-<slug>.md`. The file _is_ the state — there is no separate board. Status changes are ordinary edits and show up in `git log`.
 
 ## Format
 
@@ -9,29 +9,34 @@ One file per ticket, named `<id>-<slug>.md`. The file *is* the state — there i
 id: P1-03
 phase: 1
 title: Craig intake
-status: todo          # todo | in_progress | in_review | changes_requested | approved | done | blocked
+status: todo # todo | in_progress | in_review | changes_requested | approved | done | blocked
 assignee: ""
 depends_on: [P0-06, P1-01]
 scope:
   - packages/core/src/intake/**
   - packages/core/src/intake/*.test.ts
-estimate: M           # S (<2h) | M (half day) | L (1-2 days)
-commit: ""            # short SHA, filled by the orchestrator on done
+estimate: M # S (<2h) | M (half day) | L (1-2 days)
+commit: "" # short SHA, filled by the orchestrator on done
 ---
 
 ## Why
+
 One paragraph: what breaks or is impossible without this.
 
 ## Do
+
 Numbered, specific implementation steps.
 
 ## Acceptance
+
 Checklist of objectively verifiable statements.
 
 ## Verify
+
 Exact commands to run, and what their output must show.
 
 ## Notes
+
 Gotchas, references to prior art, links.
 ```
 
@@ -83,6 +88,7 @@ Phase 4 can start in parallel with phase 3 once `P3-01` fixes the event model, s
 ## Index
 
 ### Phase 0 — Foundations
+
 - [P0-01](P0-01-repo-scaffold.md) — Repo scaffold, workspaces, TypeScript
 - [P0-02](P0-02-test-harness.md) — Vitest, pytest, lint and format
 - [P0-03](P0-03-ci.md) — CI: macOS primary, Windows smoke
@@ -91,6 +97,7 @@ Phase 4 can start in parallel with phase 3 once `P3-01` fixes the event model, s
 - [P0-06](P0-06-contracts-stage-runner.md) — Session contracts and the stage runner
 
 ### Phase 1 — Acquisition & persistence
+
 - [P1-01](P1-01-sidecar-skeleton.md) — Python sidecar skeleton and job registry
 - [P1-02](P1-02-sidecar-lifecycle.md) — Sidecar lifecycle from Node
 - [P1-03](P1-03-craig-intake.md) — Craig recording intake
@@ -103,6 +110,7 @@ Phase 4 can start in parallel with phase 3 once `P3-01` fixes the event model, s
 - [P1-10](P1-10-intake-qa.md) — Intake QA report
 
 ### Phase 2 — Transcript & persona
+
 - [P2-01](P2-01-vad.md) — VAD segmentation
 - [P2-02](P2-02-asr.md) — ASR with word timestamps
 - [P2-03](P2-03-timeline-merge.md) — Cross-track timeline merge
@@ -117,6 +125,7 @@ Phase 4 can start in parallel with phase 3 once `P3-01` fixes the event model, s
 - [P2-12](P2-12-labeling-calibration.md) — Labeling CLI and calibration
 
 ### Phase 3 — Outline & notes
+
 - [P3-01](P3-01-event-model.md) — Event model and timeline assembly
 - [P3-02](P3-02-beat-segmentation.md) — Beat segmentation
 - [P3-03](P3-03-encounters.md) — Combat encounter reconstruction
@@ -127,6 +136,7 @@ Phase 4 can start in parallel with phase 3 once `P3-01` fixes the event model, s
 - [P3-08](P3-08-session-qa.md) — Session QA report
 
 ### Phase 4 — Desktop app
+
 - [P4-01](P4-01-electron-scaffold.md) — Electron scaffold
 - [P4-02](P4-02-ipc-contracts.md) — IPC contracts and validation
 - [P4-03](P4-03-renderer-shell.md) — Renderer transport and shell
@@ -140,6 +150,7 @@ Phase 4 can start in parallel with phase 3 once `P3-01` fixes the event model, s
 - [P4-11](P4-11-settings.md) — Settings
 
 ### Phase 5 — Hardening & release
+
 - [P5-01](P5-01-real-session-e2e.md) — Real-session end-to-end
 - [P5-02](P5-02-performance.md) — Performance budgets
 - [P5-03](P5-03-packaging.md) — Packaging and sidecar distribution

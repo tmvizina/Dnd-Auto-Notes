@@ -6,19 +6,19 @@ This backlog is designed to be executed by an orchestrator agent driving a pool 
 
 ### Codex (primary)
 
-| Role | Model / effort | Owns |
-| --- | --- | --- |
-| Orchestrator | GPT-5.6 **Sol**, medium reasoning | Architecture, ticket boundaries, integration, final approval, **all commits**, keeping `docs/tickets/` and `docs/HANDOFF.md` truthful |
-| Implementer | GPT-5.6 **Luna**, max reasoning | One ticket at a time, inside an exclusive file scope |
-| Reviewer | GPT-5.6 **Luna**, max reasoning, *different instance* | Reviews an implementer's diff against the ticket's acceptance criteria and returns a binary verdict |
+| Role         | Model / effort                                        | Owns                                                                                                                                  |
+| ------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Orchestrator | GPT-5.6 **Sol**, medium reasoning                     | Architecture, ticket boundaries, integration, final approval, **all commits**, keeping `docs/tickets/` and `docs/HANDOFF.md` truthful |
+| Implementer  | GPT-5.6 **Luna**, max reasoning                       | One ticket at a time, inside an exclusive file scope                                                                                  |
+| Reviewer     | GPT-5.6 **Luna**, max reasoning, _different instance_ | Reviews an implementer's diff against the ticket's acceptance criteria and returns a binary verdict                                   |
 
 ### Claude Code
 
-| Role | Model | Owns |
-| --- | --- | --- |
-| Orchestrator | Opus 5 | Same as Sol above |
-| Implementer | Sonnet | Same as Luna above |
-| Reviewer | Sonnet, separate agent | Same as the Luna reviewer |
+| Role         | Model                  | Owns                      |
+| ------------ | ---------------------- | ------------------------- |
+| Orchestrator | Opus 5                 | Same as Sol above         |
+| Implementer  | Sonnet                 | Same as Luna above        |
+| Reviewer     | Sonnet, separate agent | Same as the Luna reviewer |
 
 Agent definitions live in `.claude/agents/`. They are adapters over this document — this document is canonical. If they disagree, this file wins and the adapter gets fixed.
 
@@ -61,7 +61,7 @@ Agent definitions live in `.claude/agents/`. They are adapters over this documen
 1. **Workers never commit.** Only the orchestrator commits, and only after its own review pass. One reviewable ticket per commit.
 2. **Exclusive scope.** A ticket's `scope:` list is the worker's boundary. Touching a file outside it is an automatic RETURN. If a ticket genuinely needs a file outside its scope, the worker stops and reports; the orchestrator amends the ticket or splits it.
 3. **Never destroy working-tree state.** No `git clean`, `git reset --hard`, `git checkout --`, or branch switching to "get a clean tree". Unrelated uncommitted changes are someone else's work.
-4. **Windows git discipline** (applies when running on the Windows box): git mutations are *separate* tool invocations, never chained with `;`, `&&`, `||` or pipes, and never wrapped in an explicit `powershell`/`cmd.exe` call. Sequence: `git add -- <files>` → `git diff --cached --check` → `git diff --cached --stat` → `git commit -m "…"`.
+4. **Windows git discipline** (applies when running on the Windows box): git mutations are _separate_ tool invocations, never chained with `;`, `&&`, `||` or pipes, and never wrapped in an explicit `powershell`/`cmd.exe` call. Sequence: `git add -- <files>` → `git diff --cached --check` → `git diff --cached --stat` → `git commit -m "…"`.
 5. **No pushing, no PRs, no publishing, no installing machine-wide software, and no paid provider runs without asking the human first.**
 6. **Tests are part of the ticket, not a follow-up.** A ticket without its tests is not `done`. "I'll add tests in a later ticket" is a RETURN.
 7. **Fixtures are synthetic.** No real campaign audio, no real player names, no real Roll20 exports in `test/fixtures/`. Generators produce them deterministically (`P0-05`).

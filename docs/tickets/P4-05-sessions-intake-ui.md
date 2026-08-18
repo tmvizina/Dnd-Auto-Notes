@@ -14,9 +14,11 @@ commit: ""
 ---
 
 ## Why
+
 This is the front door: pick a past session to read, or start a new one. The intake page is also where the user finds out that their Roll20 capture is from the wrong evening — while that is still cheap to fix.
 
 ## Do
+
 1. Sessions list from the database index: number, title, date, duration, stage status chips, QA grade, and whether `session.md` exists. Sort and filter by date and grade.
 2. New session: title, number, date; scaffolds the folder and shows exactly where to drop the Craig download and the Roll20 capture, with a copy-path button and a reveal-in-file-manager action.
 3. Drag-and-drop of files onto the intake page copies them into the right subfolder, with a progress indicator for multi-gigabyte audio.
@@ -25,6 +27,7 @@ This is the front door: pick a past session to read, or start a new one. The int
 6. Re-running intake after a mapping fix is one click and always permitted.
 
 ## Acceptance
+
 - [ ] The list reflects the folder state, including sessions created outside the app.
 - [ ] Creating a session scaffolds the folder and shows the drop paths.
 - [ ] Drag-and-drop of a 2 GB file shows progress and does not freeze the UI.

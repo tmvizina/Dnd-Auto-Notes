@@ -13,9 +13,11 @@ commit: ""
 ---
 
 ## Why
+
 Three namespaces have to meet: Discord users (audio tracks), Roll20 accounts (rolls), and characters (the thing the notes are actually about). This registry is the only place that join exists, and it is long-lived campaign state rather than per-session data.
 
 ## Do
+
 1. Read/write `campaign/players.json`, `campaign/npcs.json`, `campaign/campaign.json`, `campaign/glossary.md`, `campaign/lexicon.ooc.json`, validated against the contracts from `P0-06`.
 2. Lookups: `byDiscordUser`, `byRoll20Account`, `byCharacterId`, `charactersActiveAt(sessionNumber)` (characters join and die — attribution must respect `active_from` / `active_to`).
 3. NPC registry with aliases, first-seen session, and the DM who voices them. New NPCs can be appended mid-pipeline by `P2-08` without hand-editing.
@@ -24,6 +26,7 @@ Three namespaces have to meet: Discord users (audio tracks), Roll20 accounts (ro
 6. Name normalisation for matching: case folding, accent stripping, punctuation removal, and Discord discriminator stripping — used for matching only, never for display.
 
 ## Acceptance
+
 - [ ] A registry round-trips through read and write with no field loss.
 - [ ] `charactersActiveAt` excludes a character retired before the session.
 - [ ] Fuzzy suggestions rank the correct player first for the fixture's near-miss names.
@@ -32,4 +35,5 @@ Three namespaces have to meet: Discord users (audio tracks), Roll20 accounts (ro
 - [ ] Nothing in this module auto-applies a fuzzy match.
 
 ## Notes
+
 Getting a mapping wrong is silent and poisons everything downstream — that is why suggestion and application are deliberately separate.

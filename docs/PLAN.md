@@ -4,13 +4,13 @@
 
 We record D&D sessions two ways and neither one alone is usable as a record of what happened.
 
-Craig gives a per-participant multi-track recording of the Discord call. That solves *who made the sound* for free — one file per person, all tracks sharing a common start. It does not solve the question that actually matters for notes: **was this person speaking as themselves or as their character, and if in character, which one?** The DM is a dozen characters over the course of an evening, switching between them mid-sentence. A transcript that labels four hours of audio with Discord usernames is not a session log.
+Craig gives a per-participant multi-track recording of the Discord call. That solves _who made the sound_ for free — one file per person, all tracks sharing a common start. It does not solve the question that actually matters for notes: **was this person speaking as themselves or as their character, and if in character, which one?** The DM is a dozen characters over the course of an evening, switching between them mid-sentence. A transcript that labels four hours of audio with Discord usernames is not a session log.
 
 Roll20 holds the other half: every roll, every roll template, whispers, emotes, and the turn-order changes that mark where combat starts and ends. It is behind a browser and has no export worth using, so it comes out through a script pasted into the Chrome console.
 
-The goal is a `session.md` per session that reads like notes a careful player took: a beat-by-beat outline, in-character dialogue attributed to characters, out-of-character table talk kept separate, combat reconstructed round by round with the rolls that decided it, and the verbal descriptions of what people actually *did*.
+The goal is a `session.md` per session that reads like notes a careful player took: a beat-by-beat outline, in-character dialogue attributed to characters, out-of-character table talk kept separate, combat reconstructed round by round with the rolls that decided it, and the verbal descriptions of what people actually _did_.
 
-The constraint that shapes every decision below: **this must work deterministically.** LLMs are for the ambiguous minority, not the pipeline. The machine that runs it is an M1 Max with 64 GB of unified memory, which can hold a Whisper large-v3, a speaker-embedding model, and a mid-size local chat model at once — so the fallback for ambiguity is a *local* model, and frontier CLIs are optional polish.
+The constraint that shapes every decision below: **this must work deterministically.** LLMs are for the ambiguous minority, not the pipeline. The machine that runs it is an M1 Max with 64 GB of unified memory, which can hold a Whisper large-v3, a speaker-embedding model, and a mid-size local chat model at once — so the fallback for ambiguity is a _local_ model, and frontier CLIs are optional polish.
 
 ## Success criteria for the whole project
 
@@ -19,7 +19,7 @@ The constraint that shapes every decision below: **this must work deterministica
 3. Persona attribution (player vs. character, and which character) is right for the large majority of utterances, and where it is not confident it says so rather than guessing. The QA report states the uncertain fraction explicitly.
 4. Every claim in the notes is traceable to a timestamp and, where mechanical, to a roll.
 5. The whole pipeline runs with no network access. Adjudication degrades to "still flagged", never to a crash.
-6. Corrections made once in the review UI make the *next* session better.
+6. Corrections made once in the review UI make the _next_ session better.
 
 ## Phase 0 — Foundations
 
@@ -68,7 +68,7 @@ The core of the project.
 - `P2-11` Optional audio-native adjudicator for flagged clips
 - `P2-12` Labeling CLI and calibration report
 
-**Acceptance:** on a hand-labeled 15-minute slice, in-character/out-of-character classification reports precision and recall per class, character assignment reports accuracy, and the flagged fraction is stated. Numbers are recorded in `docs/calibration.md` — the target is set *after* the first measurement, not guessed now. The pipeline completes end to end with the adjudicator set to `none`.
+**Acceptance:** on a hand-labeled 15-minute slice, in-character/out-of-character classification reports precision and recall per class, character assignment reports accuracy, and the flagged fraction is stated. Numbers are recorded in `docs/calibration.md` — the target is set _after_ the first measurement, not guessed now. The pipeline completes end to end with the adjudicator set to `none`.
 
 ## Phase 3 — Outline and notes
 
@@ -113,21 +113,21 @@ The first genuinely useful deliverable.
 
 ## Decisions already made
 
-| Decision | Rationale |
-| --- | --- |
-| macOS/M1 Max primary, Windows functional | The models live where the unified memory is; Windows is where the repo is edited. |
-| Python HTTP sidecar, not per-stage subprocesses | Model load dominates; a long-lived process makes re-runs cheap during review. |
-| Sidecar never touches SQLite | Proven in Audio Forge: a second writer silently loses rows and corrupts reads. |
-| Stage output is JSON on disk; SQLite is an index | Inspectable, diffable, replaceable, and survives a database rebuild. |
-| One markdown file per ticket | Parallel workers editing one checklist file conflict constantly. |
-| Deterministic scoring with explicit flags | An LLM asked to attribute 4,000 utterances will confabulate; asked to adjudicate 150 flagged ones with context, it is useful. |
-| Corrections persist per campaign, not per session | This is the only mechanism by which accuracy improves over time without training anything. |
+| Decision                                          | Rationale                                                                                                                     |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| macOS/M1 Max primary, Windows functional          | The models live where the unified memory is; Windows is where the repo is edited.                                             |
+| Python HTTP sidecar, not per-stage subprocesses   | Model load dominates; a long-lived process makes re-runs cheap during review.                                                 |
+| Sidecar never touches SQLite                      | Proven in Audio Forge: a second writer silently loses rows and corrupts reads.                                                |
+| Stage output is JSON on disk; SQLite is an index  | Inspectable, diffable, replaceable, and survives a database rebuild.                                                          |
+| One markdown file per ticket                      | Parallel workers editing one checklist file conflict constantly.                                                              |
+| Deterministic scoring with explicit flags         | An LLM asked to attribute 4,000 utterances will confabulate; asked to adjudicate 150 flagged ones with context, it is useful. |
+| Corrections persist per campaign, not per session | This is the only mechanism by which accuracy improves over time without training anything.                                    |
 
 ## Open questions
 
 Tracked, not blocking; each has a spike ticket or a fallback.
 
 - Do current Roll20 message ids still decode to a wall-clock timestamp? (`P1-06`; fallback is the live-capture MutationObserver, which stamps its own.)
-- Does ECAPA separate one person's *assumed voices* well enough to cluster them, or is a prosody-weighted feature set required? (`P2-05` measures both before choosing.)
+- Does ECAPA separate one person's _assumed voices_ well enough to cluster them, or is a prosody-weighted feature set required? (`P2-05` measures both before choosing.)
 - Which audio-native model is worth running locally for adjudication on 64 GB? (`P2-11` is a bake-off, not a commitment.)
 - How does the Python sidecar ship in a packaged app — bundled interpreter, or a first-run `uv` bootstrap? (`P5-03`.)

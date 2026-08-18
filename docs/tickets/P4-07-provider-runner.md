@@ -12,9 +12,11 @@ commit: ""
 ---
 
 ## Why
+
 The app's LLM features — adjudication, prose, notes editing — all go through one seam. Making that seam an injectable interface with a deterministic fake means the whole app is testable without ever spending a token.
 
 ## Do
+
 1. `ProviderRunner` interface: `start(request) -> RunHandle` where the handle exposes an event stream, `cancel(reason)` and `wait()`. Inject it at composition; nothing constructs a runner inline.
 2. `CliProviderRunner` spawns `claude` or `codex` headlessly:
    - Claude: `-p --output-format stream-json --verbose --permission-mode <mode>`;
@@ -28,6 +30,7 @@ The app's LLM features — adjudication, prose, notes editing — all go through
 6. `DeterministicFakeRunner` exercises the whole lifecycle offline, and is excluded from the packaged bundle.
 
 ## Acceptance
+
 - [ ] Both CLIs are discovered when installed and reported precisely when not.
 - [ ] A real headless run streams events and records a complete `agent_runs` row.
 - [ ] Prompts containing quotes, newlines and unicode survive intact via stdin.

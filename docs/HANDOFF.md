@@ -27,9 +27,9 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 
 ## Commit checkpoints
 
-| SHA | Ticket | Scope | Validated |
-| --- | --- | --- | --- |
-| `cd93fd0` | — | Planning docs, 52-ticket backlog, agent definitions | Root commit, 66 files. All 52 ticket-index links resolve; every ticket has complete frontmatter; no `depends_on` references a non-existent id. |
+| SHA       | Ticket | Scope                                               | Validated                                                                                                                                      |
+| --------- | ------ | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cd93fd0` | —      | Planning docs, 52-ticket backlog, agent definitions | Root commit, 66 files. All 52 ticket-index links resolve; every ticket has complete frontmatter; no `depends_on` references a non-existent id. |
 
 ## Known risks
 
