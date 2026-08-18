@@ -2,7 +2,7 @@
 id: P2-02
 phase: 2
 title: ASR with word timestamps
-status: in_progress
+status: done
 assignee: "luna-p2-02"
 depends_on: [P2-01]
 scope:
@@ -10,7 +10,7 @@ scope:
   - sidecar/dnd_sidecar/server.py
   - sidecar/tests/test_asr.py
 estimate: L
-commit: ""
+commit: "d140b8a"
 ---
 
 ## Why
@@ -32,12 +32,12 @@ Everything textual downstream — lexical rules, roll anchoring, quotes in the n
 
 ## Acceptance
 
-- [ ] Word timestamps are track-absolute and monotonically increasing.
-- [ ] The same audio transcribed twice is byte-identical.
-- [ ] All three backends produce the same schema; a missing backend fails with a message naming the install command.
-- [ ] Glossary biasing measurably improves proper-noun accuracy on a fixture containing invented names.
-- [ ] `DND_FAKE_ASR=1` completes the full stage with no model installed.
-- [ ] A four-hour session's speech transcribes within the budget recorded in `P5-02`.
+- [x] Word timestamps are track-absolute and monotonically increasing.
+- [x] The same audio transcribed twice is byte-identical.
+- [x] All three backends produce the same schema; a missing backend fails with a message naming the install command.
+- [x] Glossary biasing measurably improves proper-noun accuracy on a fixture containing invented names.
+- [x] `DND_FAKE_ASR=1` completes the full stage with no model installed.
+- [x] A four-hour session's speech transcribes within the budget recorded in `P5-02`.
 
 ## Notes
 
