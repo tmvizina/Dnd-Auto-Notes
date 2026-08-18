@@ -2,8 +2,8 @@
 id: P4-06
 phase: 4
 title: Pipeline run streaming
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p4-06"
 depends_on: [P4-05]
 scope:
   - app/desktop/src/main/runs/**
