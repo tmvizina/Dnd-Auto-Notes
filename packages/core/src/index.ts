@@ -1,5 +1,6 @@
 export { findRepoRoot } from "./paths.js";
 export * from "./contracts/index.js";
+export * from "./campaign/index.js";
 export * from "./session/index.js";
 export * from "./stage/index.js";
 

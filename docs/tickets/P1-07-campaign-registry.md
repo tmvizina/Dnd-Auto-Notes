@@ -2,8 +2,8 @@
 id: P1-07
 phase: 1
 title: Campaign registry and identity mapping
-status: todo
-assignee: ""
+status: approved
+assignee: "orchestrator"
 depends_on: [P0-06]
 scope:
   - packages/core/src/campaign/**
@@ -27,13 +27,27 @@ Three namespaces have to meet: Discord users (audio tracks), Roll20 accounts (ro
 
 ## Acceptance
 
-- [ ] A registry round-trips through read and write with no field loss.
-- [ ] `charactersActiveAt` excludes a character retired before the session.
-- [ ] Fuzzy suggestions rank the correct player first for the fixture's near-miss names.
-- [ ] `campaign:init` on the synthetic fixture emits a registry stub containing every observed identity.
-- [ ] Validation rejects a duplicate character id and a player with no identities.
-- [ ] Nothing in this module auto-applies a fuzzy match.
+- [x] A registry round-trips through read and write with no field loss.
+- [x] `charactersActiveAt` excludes a character retired before the session.
+- [x] Fuzzy suggestions rank the correct player first for the fixture's near-miss names.
+- [x] `campaign:init` on the synthetic fixture emits a registry stub containing every observed identity.
+- [x] Validation rejects a duplicate character id and a player with no identities.
+- [x] Nothing in this module auto-applies a fuzzy match.
 
 ## Notes
 
 Getting a mapping wrong is silent and poisons everything downstream — that is why suggestion and application are deliberately separate.
+
+## Delivered
+
+`packages/core/src/campaign/` — `normalise.ts` (matching-only name folding and a dependency-free similarity score), `registry.ts` (load, validate, save, lookups) and `suggest.ts` (ranked candidates, registry stub). 35 tests. `npm run campaign:init` wires it to a real session.
+
+Three bugs found by running it against the fixture rather than reading it:
+
+- **A flat prefix bonus outranked closer matches.** `similarity("Ashh B.", "Ash")` scored 0.85 on the prefix rule while the genuinely closer `"Ash B."` scored 0.83, so the wrong value was reported as the match. The bonus now scales with how much of the longer string the prefix covers.
+- **Whole-string comparison could not see a shared stem.** `"Ash B."` vs `"ashcodes"` scored 0.375 — below the noise floor — because the tokens differ and the strings diverge after three characters. That is exactly the shape of a Discord handle derived from a name, so token-level prefix matching was added; it now scores 0.75 and is offered as a suggestion.
+- **An identical token made `similarity()` return 1.** `similarity("Wren", "wren_dm")` hit 1.0 through the token-prefix rule, and `buildRegistryStub` was using `=== 1` as its exactness test — so it bound the DM's Roll20 account to a Discord user on partial evidence. Partial evidence is now capped below 1, and exactness is tested with normalised string equality directly. **This was the ticket's own "nothing auto-applies a fuzzy match" rule being violated by the implementation**, and it is the failure mode this project can least afford: silent, and wrong four stages later.
+
+The stub therefore binds a Roll20 account to a Discord user **only** when the two names are identical once case, accents, punctuation and Discord discriminators are folded — `Cyd H.` and `cyd_h` are the same string, which is not a guess. On the synthetic fixture that yields one automatic binding and three ranked suggestions the human merges by hand.
+
+Verified: registries round-trip with no field loss; `charactersActiveAt` respects `active_from`, `active_to` and both together; duplicate character ids, an id used as both character and NPC, and a player with no matchable identity are all rejected at load; `withNpc` appends but never overwrites; and `campaign:init` on the synthetic fixture emits a row for every observed identity with nothing auto-bound beyond exact matches.
