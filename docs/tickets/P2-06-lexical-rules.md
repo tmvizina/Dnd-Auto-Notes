@@ -2,7 +2,7 @@
 id: P2-06
 phase: 2
 title: Lexical rule engine
-status: in_progress
+status: done
 assignee: "luna-p2-06"
 depends_on: [P2-03, P1-07]
 scope:
@@ -10,7 +10,7 @@ scope:
   - packages/core/src/persona/lexical.test.ts
   - campaign/lexicon.ooc.json
 estimate: M
-commit: ""
+commit: "b25f2c9"
 ---
 
 ## Why
@@ -33,9 +33,9 @@ Acoustics tell you a voice changed; words tell you what it changed into. "Does a
 
 ## Acceptance
 
-- [ ] Each marker class fires on its fixture cases and not on the counterexamples.
-- [ ] Quoted speech inside a narration utterance is located with word-time spans.
-- [ ] Spoken numbers match digit forms.
-- [ ] A player's real first name spoken by another player scores out-of-character; a character name does not.
-- [ ] Every score comes with the list of markers that produced it.
-- [ ] Adding a campaign glossary term changes `lex_ic` with no code change.
+- [x] Each marker class fires on its fixture cases and not on the counterexamples.
+- [x] Quoted speech inside a narration utterance is located with word-time spans.
+- [x] Spoken numbers match digit forms.
+- [x] A player's real first name spoken by another player scores out-of-character; a character name does not.
+- [x] Every score comes with the list of markers that produced it.
+- [x] Adding a campaign glossary term changes `lex_ic` with no code change.
