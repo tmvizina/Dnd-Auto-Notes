@@ -99,6 +99,23 @@ export const Beat = z.object({
   checks: z.array(Check).default([]),
   /** Why the segmenter cut here — makes a wrong split explainable. */
   boundary_evidence: z.array(NonEmpty).default([]),
+  event_ids: z.array(EventId).default([]),
+  roll_counts: z
+    .object({
+      attack: z.number().int().nonnegative(),
+      damage: z.number().int().nonnegative(),
+      save: z.number().int().nonnegative(),
+      check: z.number().int().nonnegative(),
+      initiative: z.number().int().nonnegative(),
+      death_save: z.number().int().nonnegative(),
+      other: z.number().int().nonnegative(),
+    })
+    .default({ attack: 0, damage: 0, save: 0, check: 0, initiative: 0, death_save: 0, other: 0 }),
+  in_character_speech_ratio: z.number().min(0).max(1).default(0),
+  dominant_characters: z.array(CharacterRef).default([]),
+  boundary_signals: z
+    .array(z.object({ kind: z.string(), score: z.number(), evidence: z.string() }))
+    .default([]),
   summary_deterministic: z.string().optional(),
   summary_llm: z.string().optional(),
 });
