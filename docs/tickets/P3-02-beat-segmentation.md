@@ -2,7 +2,7 @@
 id: P3-02
 phase: 3
 title: Beat segmentation
-status: in_progress
+status: done
 assignee: "luna-p3-02"
 depends_on: [P3-01]
 scope:
@@ -10,7 +10,7 @@ scope:
   - packages/core/src/outline/beats.test.ts
   - packages/core/src/contracts/events.ts
 estimate: L
-commit: ""
+commit: "6ca469c"
 ---
 
 ## Why
@@ -35,9 +35,9 @@ commit: ""
 
 ## Acceptance
 
-- [ ] Combat beats align to turn-order boundaries within one event.
-- [ ] Beat count on the fixture is within 20 % of `truth.json`, with no beat under the minimum duration.
-- [ ] Classification matches the fixture's labels.
-- [ ] Every event belongs to exactly one beat and no event is lost.
-- [ ] Deterministic titles are non-empty and distinguishable.
-- [ ] Boundary evidence is recorded per beat so a wrong split is explainable.
+- [x] Combat beats align to turn-order boundaries within one event.
+- [x] Beat count on the fixture is within 20 % of `truth.json`, with no beat under the minimum duration.
+- [x] Classification matches the fixture's labels.
+- [x] Every event belongs to exactly one beat and no event is lost.
+- [x] Deterministic titles are non-empty and distinguishable.
+- [x] Boundary evidence is recorded per beat so a wrong split is explainable.

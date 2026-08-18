@@ -80,6 +80,7 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 | `b4cafdf` | `P2-10` | Adjudicator interface, CLI/local providers, safe caching and cancellation | Independent review returned orphan-prone cancellation, incomplete cache identity, missing confidence ceilings and absent hung-child coverage. It passed after actual child closure controlled bounded SIGKILL escalation, provider/model/system/context entered the content hash, and both live and cached responses were constrained by deterministic confidence. Nine focused tests, workspace typecheck, scoped lint and format passed; no real provider or network call was made. |
 | `284f415` | `P2-08` | Deterministic DM narration/NPC attribution and proposal-only NPC discovery | Seven review rounds eliminated PC-to-DM leakage, non-adjacent address evidence, corrupted quote handling, weak name windows, continuity across intervening players, and accidental auto-assignment of newly discovered names. The final focused suite passed 8 tests with workspace typecheck, lint and format. Unknown recurring voices produce review proposals only; registry files are never written. |
 | `6111324` | `P3-01` | Deterministic unified session event model, traversal API and outline stage | Independent review passed collision-checked stable ids, strict ordering, source-reference validation, linked roll announcements with retained evidence, gaps, chat, combat and turn-order events, derived display fields and atomic schema-validated persistence. Workspace typecheck, scoped lint and format passed; focused tests were authored for model and stage behavior but rerunning them in the final orchestration process was blocked by the host temporary-directory EPERM condition. |
+| `6ca469c` | `P3-02` | Explainable deterministic beat segmentation and persisted beat metrics | Independent review returned transition-only combat beats, conflated classification/boundary accuracy and ineffective partition guards. It passed after combat intervals retained enclosed roll evidence, metrics were separated, and duplicate/missing event and source partitions became runtime errors. Core typecheck, scoped lint and format passed; the host Vitest temp-directory EPERM prevented the final focused rerun. |
 
 ## Known risks
 
@@ -91,13 +92,13 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 
 ## Exact next actions
 
-`P2-08`, `P2-10` and `P3-01` are fully closed. The ticket tool now reports five ready tickets:
+`P3-02` is fully closed; `P2-12` and `P4-08` remain in correction review. The ticket tool now reports five other ready tickets:
 
 1. **`P2-11`** - audio-native adjudicator; no model download or paid call is authorized.
-2. **`P2-12`** - labeling CLI and calibration.
-3. **`P3-02`** - beat segmentation over the unified event stream.
-4. **`P4-07`** - Claude and Codex provider runner; tests must use fakes and must not run paid prompts.
-5. **`P4-08`** - flagged-span review page.
+2. **`P3-03`** - combat encounter reconstruction.
+3. **`P3-04`** - skill checks and social scenes.
+4. **`P3-05`** - action description extraction.
+5. **`P4-07`** - Claude and Codex provider runner; tests must use fakes and must not run paid prompts.
 
 Assign from `npm run tickets -- --ready`; do not rely on this prose if ticket state changes.
 
