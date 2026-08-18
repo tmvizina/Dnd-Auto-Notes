@@ -2,7 +2,7 @@
 id: P4-06
 phase: 4
 title: Pipeline run streaming
-status: in_progress
+status: done
 assignee: "luna-p4-06"
 depends_on: [P4-05]
 scope:
@@ -27,7 +27,7 @@ scope:
   - packages/core/src/stages/intake.ts
   - packages/core/src/stages/intake.test.ts
 estimate: L
-commit: ""
+commit: "da789f8"
 ---
 
 ## Why
@@ -46,9 +46,9 @@ Stages take minutes to hours. Progress has to be live, resumable across a window
 
 ## Acceptance
 
-- [ ] A full pipeline run streams per-stage progress to completion.
-- [ ] Reloading mid-run reattaches with no gaps and no duplicates.
-- [ ] Cancel stops the run and the sidecar job within seconds.
-- [ ] A crashed app leaves no run stuck in `running` after relaunch.
-- [ ] Replay truncation is reported rather than silently dropping history.
-- [ ] Two concurrent runs on different sessions do not interleave events.
+- [x] A full pipeline run streams per-stage progress to completion.
+- [x] Reloading mid-run reattaches with no gaps and no duplicates.
+- [x] Cancel stops the run and the sidecar job within seconds.
+- [x] A crashed app leaves no run stuck in `running` after relaunch.
+- [x] Replay truncation is reported rather than silently dropping history.
+- [x] Two concurrent runs on different sessions do not interleave events.
