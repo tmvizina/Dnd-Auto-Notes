@@ -2,7 +2,7 @@
 id: P2-12
 phase: 2
 title: Labeling CLI and calibration
-status: in_progress
+status: done
 assignee: "luna-p2-12"
 depends_on: [P2-08]
 scope:
@@ -18,7 +18,7 @@ scope:
   - packages/core/src/index.ts
   - docs/calibration.md
 estimate: M
-commit: ""
+commit: "eebbb3e"
 ---
 
 ## Why
@@ -37,10 +37,10 @@ Thresholds guessed in code are thresholds that are wrong. Twenty minutes of hand
 
 ## Acceptance
 
-- [ ] Labelling 50 utterances and re-running skips them.
-- [ ] All three sampling strategies work and are documented for when to use which.
-- [ ] Calibration produces a new weights file and never mutates the old one.
-- [ ] The report includes per-class precision and recall and a threshold sweep.
-- [ ] `docs/calibration.md` gains an appended, dated entry per run.
-- [ ] Fitting below the minimum label count refuses with the shortfall stated.
-- [ ] Labelled utterances measurably improve the profile bank on a held-out session.
+- [x] Labelling 50 utterances and re-running skips them.
+- [x] All three sampling strategies work and are documented for when to use which.
+- [x] Calibration produces a new weights file and never mutates the old one.
+- [x] The report includes per-class precision and recall and a threshold sweep.
+- [x] `docs/calibration.md` gains an appended, dated entry per run.
+- [x] Fitting below the minimum label count refuses with the shortfall stated.
+- [x] Labelled utterances measurably improve the profile bank on a held-out session.
