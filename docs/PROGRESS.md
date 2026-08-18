@@ -3,7 +3,7 @@
 Single-page status snapshot for the full backlog. Ticket frontmatter remains authoritative; update this file whenever a ticket changes status or records its implementation commit.
 
 **Last updated:** 2026-08-18
-**Overall:** 33 done, 0 in progress, 1 blocked, 18 todo - 52 total (63.5% done)
+**Overall:** 33 done, 1 in progress, 1 blocked, 17 todo - 52 total (63.5% done)
 
 ## Phase 0 — Foundations
 
@@ -33,20 +33,20 @@ Single-page status snapshot for the full backlog. Ticket frontmatter remains aut
 
 ## Phase 2 — Transcript and persona
 
-| Ticket                                         | Status | Assignee   | Commit    | Title                                           |
-| ---------------------------------------------- | ------ | ---------- | --------- | ----------------------------------------------- |
-| [P2-01](tickets/P2-01-vad.md)                  | done   | luna-p2-01 | `edd2445` | VAD segmentation                                |
-| [P2-02](tickets/P2-02-asr.md)                  | done   | luna-p2-02 | `d140b8a` | ASR with word timestamps                        |
-| [P2-03](tickets/P2-03-timeline-merge.md)       | done   | luna-p2-03 | `94d006f` | Cross-track timeline merge                      |
-| [P2-04](tickets/P2-04-utterance-features.md)   | done   | luna-p2-04 | `12d7b10` | Utterance embeddings and prosody features       |
-| [P2-05](tickets/P2-05-voice-profiles.md)       | done   | luna-p2-05 | `2109d87` | Voice-mode clustering and campaign profile bank |
-| [P2-06](tickets/P2-06-lexical-rules.md)        | done   | luna-p2-06 | `b25f2c9` | Lexical rule engine                             |
-| [P2-07](tickets/P2-07-persona-scorer.md)       | done   | luna-p2-07 | `53988c0` | Persona scorer and flagging                     |
-| [P2-08](tickets/P2-08-dm-npc.md)               | done   | luna-p2-08 | `284f415` | DM-to-NPC assignment                            |
-| [P2-09](tickets/P2-09-roll-speech-align.md)    | done   | luna-p2-09 | `45041cc` | Roll-to-speech time anchoring                   |
-| [P2-10](tickets/P2-10-adjudicator.md)          | done   | luna-p2-10 | `b4cafdf` | Adjudicator interface and providers             |
-| [P2-11](tickets/P2-11-audio-adjudicator.md)    | todo   | —          | —         | Audio-native adjudicator                        |
-| [P2-12](tickets/P2-12-labeling-calibration.md) | todo   | —          | —         | Labeling CLI and calibration                    |
+| Ticket                                         | Status      | Assignee   | Commit    | Title                                           |
+| ---------------------------------------------- | ----------- | ---------- | --------- | ----------------------------------------------- |
+| [P2-01](tickets/P2-01-vad.md)                  | done        | luna-p2-01 | `edd2445` | VAD segmentation                                |
+| [P2-02](tickets/P2-02-asr.md)                  | done        | luna-p2-02 | `d140b8a` | ASR with word timestamps                        |
+| [P2-03](tickets/P2-03-timeline-merge.md)       | done        | luna-p2-03 | `94d006f` | Cross-track timeline merge                      |
+| [P2-04](tickets/P2-04-utterance-features.md)   | done        | luna-p2-04 | `12d7b10` | Utterance embeddings and prosody features       |
+| [P2-05](tickets/P2-05-voice-profiles.md)       | done        | luna-p2-05 | `2109d87` | Voice-mode clustering and campaign profile bank |
+| [P2-06](tickets/P2-06-lexical-rules.md)        | done        | luna-p2-06 | `b25f2c9` | Lexical rule engine                             |
+| [P2-07](tickets/P2-07-persona-scorer.md)       | done        | luna-p2-07 | `53988c0` | Persona scorer and flagging                     |
+| [P2-08](tickets/P2-08-dm-npc.md)               | done        | luna-p2-08 | `284f415` | DM-to-NPC assignment                            |
+| [P2-09](tickets/P2-09-roll-speech-align.md)    | done        | luna-p2-09 | `45041cc` | Roll-to-speech time anchoring                   |
+| [P2-10](tickets/P2-10-adjudicator.md)          | done        | luna-p2-10 | `b4cafdf` | Adjudicator interface and providers             |
+| [P2-11](tickets/P2-11-audio-adjudicator.md)    | todo        | —          | —         | Audio-native adjudicator                        |
+| [P2-12](tickets/P2-12-labeling-calibration.md) | in_progress | luna-p2-12 | -         | Labeling CLI and calibration                    |
 
 ## Phase 3 — Outline and notes
 

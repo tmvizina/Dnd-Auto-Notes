@@ -2,8 +2,8 @@
 id: P2-12
 phase: 2
 title: Labeling CLI and calibration
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p2-12"
 depends_on: [P2-08]
 scope:
   - packages/cli/src/commands/label.ts
