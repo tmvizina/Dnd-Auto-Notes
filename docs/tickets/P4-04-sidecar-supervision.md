@@ -2,8 +2,8 @@
 id: P4-04
 phase: 4
 title: Sidecar supervision from the main process
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p4-04"
 depends_on: [P4-02, P1-02]
 scope:
   - app/desktop/src/main/sidecar/**
