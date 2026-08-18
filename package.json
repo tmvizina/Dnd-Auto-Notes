@@ -15,6 +15,7 @@
   "scripts": {
     "build": "tsc -b tsconfig.build.json",
     "clean": "tsc -b tsconfig.build.json --clean",
+    "fixture:generate": "node tools/generate-fixture.mjs --out test/fixtures/session-synthetic",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",

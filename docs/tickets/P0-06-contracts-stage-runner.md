@@ -2,7 +2,7 @@
 id: P0-06
 phase: 0
 title: Session contracts and the stage runner
-status: approved
+status: done
 assignee: "orchestrator"
 depends_on: [P0-01]
 scope:
@@ -10,7 +10,7 @@ scope:
   - packages/core/src/session/**
   - packages/core/src/stage/**
 estimate: L
-commit: ""
+commit: "5104070"
 ---
 
 ## Why

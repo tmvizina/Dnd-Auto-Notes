@@ -28,3 +28,4 @@ sessions/*/session.pdf
 
 # TypeScript incremental build state
 *.tsbuildinfo
+test/fixtures/session-synthetic/
