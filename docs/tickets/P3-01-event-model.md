@@ -2,7 +2,7 @@
 id: P3-01
 phase: 3
 title: Event model and timeline assembly
-status: in_progress
+status: done
 assignee: "luna-p3-01"
 depends_on: [P2-07, P2-09]
 scope:
@@ -13,7 +13,7 @@ scope:
   - packages/core/src/contracts/events.ts
   - packages/core/src/index.ts
 estimate: M
-commit: ""
+commit: "6111324"
 ---
 
 ## Why
@@ -31,8 +31,8 @@ Attributed speech and anchored rolls are still two lists. The event model is the
 
 ## Acceptance
 
-- [ ] Events are strictly ordered with deterministic ids across re-runs.
-- [ ] Every event's `source_refs` resolve to existing utterance or roll ids.
-- [ ] A roll and the utterance announcing it are linked, not duplicated.
-- [ ] Gaps over the threshold appear as events.
-- [ ] The traversal API is covered by tests and used by `P3-02` onward.
+- [x] Events are strictly ordered with deterministic ids across re-runs.
+- [x] Every event's `source_refs` resolve to existing utterance or roll ids.
+- [x] A roll and the utterance announcing it are linked, not duplicated.
+- [x] Gaps over the threshold appear as events.
+- [x] The traversal API is covered by tests and used by `P3-02` onward.
