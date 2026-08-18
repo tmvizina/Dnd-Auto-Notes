@@ -8,6 +8,7 @@ depends_on: [P1-05]
 scope:
   - packages/core/src/intake/roll20/time.ts
   - packages/core/src/intake/roll20/time.test.ts
+  - packages/core/src/intake/roll20/index.ts
   - docs/spikes/roll20-timestamps.md
 estimate: M
 commit: ""
