@@ -11,6 +11,7 @@ scope:
   - sidecar/tests/test_features.py
   - packages/core/src/stages/features.ts
   - packages/core/src/stages/features.test.ts
+  - packages/core/src/contracts/features.ts
 estimate: M
 commit: ""
 ---
