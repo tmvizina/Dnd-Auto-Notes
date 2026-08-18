@@ -2,11 +2,15 @@
 id: P1-03
 phase: 1
 title: Craig recording intake
-status: todo
-assignee: ""
+status: in_progress
+assignee: "orchestrator"
 depends_on: [P0-06, P1-02]
 scope:
   - packages/core/src/intake/craig/**
+  - packages/core/src/index.ts
+  - sidecar/dnd_sidecar/probe.py
+  - sidecar/dnd_sidecar/server.py
+  - sidecar/tests/test_probe.py
 estimate: M
 commit: ""
 ---
@@ -34,6 +38,14 @@ Speaker identity is the one thing this project gets for free, and it comes entir
 - [ ] The silent track from `--with-defects` is reported with a near-zero `speech_ratio`.
 - [ ] An unmapped username yields `player_id: null` plus a candidate list — never a guess.
 - [ ] Re-running with unchanged inputs re-extracts nothing and rewrites nothing.
+
+## Scope amendment
+
+Step 4 ("add the endpoint to the sidecar as part of this ticket") cannot be done
+inside `packages/core/src/intake/craig/**`. The orchestrator widened `scope:` to
+the sidecar probe module, its endpoint and its test, plus the one-line barrel
+export in `packages/core/src/index.ts` — the same widening `P1-02` took. No other
+ticket's scope overlaps these paths.
 
 ## Notes
 

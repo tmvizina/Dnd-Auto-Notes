@@ -13,13 +13,13 @@ Contract with the Node side:
 from __future__ import annotations
 
 import logging
-import os
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from . import __version__, capabilities, logging_setup
+from . import probe as probe_module
 from .jobs import GPU_GATE, cancel_job, create_job, get_job, list_jobs
 
 logging_setup.configure()
@@ -53,19 +53,20 @@ def health() -> dict[str, Any]:
 
 class ProbeRequest(BaseModel):
     paths: list[str] = Field(default_factory=list)
+    #: When false, only existence and size are returned — no ffprobe, no decode.
+    media: bool = True
 
 
 @app.post("/probe")
 def probe(request: ProbeRequest) -> dict[str, Any]:
-    """Cheap file facts. Synchronous because it loads no model."""
-    results = []
-    for path in request.paths:
-        try:
-            stat = os.stat(path)
-            results.append({"path": path, "exists": True, "size_bytes": stat.st_size})
-        except OSError as error:
-            results.append({"path": path, "exists": False, "error": str(error)})
-    return {"files": results}
+    """Duration, format and speech ratio per file.
+
+    Synchronous because it loads no model. It does shell out to ffprobe and
+    ffmpeg, so a track that cannot be read reports its error in its own row
+    rather than failing the batch: intake still wants the tracks it *could*
+    measure, and a whole session should not be lost to one corrupt file.
+    """
+    return {"files": [probe_module.probe_file(path, media=request.media) for path in request.paths]}
 
 
 class EchoRequest(BaseModel):
