@@ -7,7 +7,21 @@ assignee: "luna-p4-11"
 depends_on: [P4-03]
 scope:
   - app/ui/src/pages/Settings.tsx
+  - app/ui/src/pages/Settings.test.tsx
+  - app/ui/src/pages.tsx
+  - app/ui/src/App.tsx
+  - app/ui/src/transport.ts
+  - app/ui/src/transport.test.ts
   - app/desktop/src/main/handlers/settings.ts
+  - app/desktop/src/main/handlers/settings.test.ts
+  - app/desktop/src/shared/contracts.ts
+  - app/desktop/src/shared/contracts.test.ts
+  - app/desktop/src/main/ipc.ts
+  - app/desktop/src/main/ipc.test.ts
+  - app/desktop/src/preload/index.ts
+  - app/desktop/src/preload/index.test.ts
+  - app/desktop/src/main/main.ts
+  - app/desktop/src/main/main.test.ts
 estimate: S
 commit: ""
 ---
