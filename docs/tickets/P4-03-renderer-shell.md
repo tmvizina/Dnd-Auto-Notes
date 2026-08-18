@@ -2,8 +2,8 @@
 id: P4-03
 phase: 4
 title: Renderer transport and app shell
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p4-03"
 depends_on: [P4-02]
 scope:
   - app/ui/**
