@@ -19,6 +19,14 @@ export type {
   SessionEvent as OutlineSessionEvent,
 } from "./outline/events.js";
 export * from "./stages/outline.js";
+export * from "./persona/calibrate.js";
+export { readFeatureEmbedding } from "./stages/features.js";
+export {
+  readProfiles,
+  revertProfile,
+  seedMissingProfiles,
+  updateProfile,
+} from "./persona/profileBank.js";
 
 /** Bumped when an on-disk artifact shape changes in a way stages must notice. */
 export const CORE_VERSION = "0.1.0";

@@ -167,6 +167,79 @@ export async function readTableProfile(root: string, player: string): Promise<Vo
     return null;
   }
 }
+
+export async function seedProfileBank(
+  root: string,
+  labels: readonly {
+    utterance_id: string;
+    player_id: string;
+    character_id: string | null;
+    embedding: readonly number[];
+    session_id: string;
+  }[],
+): Promise<void> {
+  const groups = new Map<string, (typeof labels)[number][]>();
+  for (const label of labels) {
+    const key = `${label.player_id}|${label.character_id ?? "table"}`;
+    groups.set(key, [...(groups.get(key) ?? []), label]);
+  }
+  for (const [key, items] of groups) {
+    const [player, character] = key.split("|");
+    const centroid = items[0]!.embedding.map(
+      (_, index) => items.reduce((sum, item) => sum + item.embedding[index]!, 0) / items.length,
+    );
+    await writeProfile(root, player!, {
+      profile_id: character!,
+      centroid,
+      spread_radius: 0,
+      example_utterance_count: items.length,
+      sessions: [...new Set(items.map((item) => item.session_id))].sort(),
+      version: 1,
+    });
+  }
+}
+
+/** Seed only absent character profiles; existing human-confirmed profiles are immutable here. */
+export async function seedMissingProfiles(
+  root: string,
+  labels: readonly {
+    player_id: string;
+    character_id: string | null;
+    embedding: readonly number[];
+    session_id: string;
+  }[],
+): Promise<number> {
+  const groups = new Map<string, (typeof labels)[number][]>();
+  for (const label of labels) {
+    if (label.character_id === null) continue;
+    const key = `${label.player_id}|${label.character_id}`;
+    groups.set(key, [...(groups.get(key) ?? []), label]);
+  }
+  let created = 0;
+  for (const [key, items] of [...groups.entries()].sort(([left], [right]) =>
+    left.localeCompare(right),
+  )) {
+    const [player, character] = key.split("|");
+    if (player === undefined || character === undefined) continue;
+    const existing = (await readProfiles(root, player)).some(
+      (profile) => profile.profile_id === character,
+    );
+    if (existing) continue;
+    const centroid = items[0]!.embedding.map(
+      (_, index) => items.reduce((sum, item) => sum + item.embedding[index]!, 0) / items.length,
+    );
+    await writeProfile(root, player, {
+      profile_id: character,
+      centroid,
+      spread_radius: 0,
+      example_utterance_count: items.length,
+      sessions: [...new Set(items.map((item) => item.session_id))].sort(),
+      version: 1,
+    });
+    created += 1;
+  }
+  return created;
+}
 export async function updateProfile(
   root: string,
   player: string,

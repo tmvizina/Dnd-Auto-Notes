@@ -1,5 +1,7 @@
 import { existsSync } from "node:fs";
+import { spawn } from "node:child_process";
 import { mkdir, readFile } from "node:fs/promises";
+import { createInterface } from "node:readline/promises";
 import { isAbsolute, join, resolve } from "node:path";
 import {
   buildIntakeQaReport,
@@ -17,6 +19,17 @@ import {
 import type { QaReport, Session, StageResult } from "@dnd/core";
 import { formatConfig, resolveConfig } from "./config.js";
 import { PLANNED_COMMANDS, USAGE } from "./usage.js";
+import { labelSession, LabelUsageError, type LabelChoiceInput } from "./commands/label.js";
+import {
+  appendCalibrationDoc,
+  calibrate,
+  measureProfileAccuracy,
+  profilePartitions,
+  readLabels,
+  readProfiles,
+  seedMissingProfiles,
+  writeCalibration,
+} from "@dnd/core";
 
 export const CLI_VERSION = "0.1.0";
 
@@ -38,6 +51,108 @@ export interface RunOptions {
   readonly isTTY?: boolean;
   /** Receives live progress lines when plain output is attached to a TTY. */
   readonly onProgress?: (event: ProgressEvent) => void;
+  readonly labelPrompt?: (item: LabelChoiceInput) => Promise<{
+    mode: "in_character" | "out_of_character" | "narration" | "uncertain";
+    character_id: string | null;
+  }>;
+  readonly labelPlayer?: (clip: LabelChoiceInput["clip"]) => Promise<void>;
+  readonly now?: () => string;
+}
+
+export function playLabelClip(
+  clip: LabelChoiceInput["clip"],
+  spawnProcess: typeof spawn = spawn,
+): Promise<void> {
+  if (!existsSync(clip.path))
+    return Promise.reject(new Error(`audio clip not found: ${clip.path}`));
+  const duration = clip.end_s - clip.start_s;
+  if (
+    !Number.isFinite(clip.start_s) ||
+    !Number.isFinite(duration) ||
+    clip.start_s < 0 ||
+    duration <= 0
+  )
+    return Promise.reject(new Error("audio clip bounds are invalid"));
+  const command = "ffplay";
+  const args = [
+    "-nodisp",
+    "-autoexit",
+    "-ss",
+    String(clip.start_s),
+    "-t",
+    String(duration),
+    clip.path,
+  ];
+  return new Promise((resolve, reject) => {
+    const child = spawnProcess(command, args, { stdio: "ignore", windowsHide: true });
+    let settled = false;
+    let terminating = false;
+    const timeout: NodeJS.Timeout = setTimeout(() => {
+      if (settled) return;
+      terminating = true;
+      child.kill("SIGTERM");
+      killTimer = setTimeout(() => child.kill("SIGKILL"), 1_000);
+      killTimer.unref();
+      hardTimer = setTimeout(
+        () => finish(new Error("audio player timed out and was terminated")),
+        2_000,
+      );
+      hardTimer.unref();
+    }, 30_000);
+    let killTimer: NodeJS.Timeout | undefined;
+    let hardTimer: NodeJS.Timeout | undefined;
+    const cleanup = (): void => {
+      if (timeout !== undefined) clearTimeout(timeout);
+      if (killTimer !== undefined) clearTimeout(killTimer);
+      if (hardTimer !== undefined) clearTimeout(hardTimer);
+      child.removeListener("error", onError);
+      child.removeListener("close", onClose);
+    };
+    const finish = (error?: Error): void => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      if (error === undefined) resolve();
+      else reject(error);
+    };
+    const onError = (error: Error): void => finish(error);
+    const onClose = (code: number | null): void => {
+      if (terminating) {
+        finish(new Error("audio player timed out and was terminated"));
+      } else if (code === 0) finish();
+      else finish(new Error(`audio player exited with ${String(code)}`));
+    };
+    timeout.unref();
+    child.once("error", onError);
+    child.once("close", onClose);
+  });
+}
+
+export function platformLabelPlayer(clip: LabelChoiceInput["clip"]): Promise<void> {
+  return playLabelClip(clip);
+}
+
+function interactiveLabelPrompt(): {
+  readonly choose: NonNullable<RunOptions["labelPrompt"]>;
+  readonly close: () => void;
+} {
+  const readline = createInterface({ input: process.stdin, output: process.stdout });
+  const choose = async (item: LabelChoiceInput) => {
+    const answer = await readline.question(
+      `\n${item.utterance_id} [${item.clip.path} ${item.clip.start_s}-${item.clip.end_s}s]\nmode (i/o/n/u), optional character id: `,
+    );
+    const [modeCode, character] = answer.trim().toLowerCase().split(/\s+/u);
+    const modes = {
+      i: "in_character",
+      o: "out_of_character",
+      n: "narration",
+      u: "uncertain",
+    } as const;
+    const mode = modeCode === undefined ? undefined : modes[modeCode as keyof typeof modes];
+    if (mode === undefined) throw new LabelUsageError("mode must be i, o, n, or u");
+    return { mode, character_id: mode === "in_character" ? (character ?? null) : null };
+  };
+  return { choose, close: () => readline.close() };
 }
 
 interface ParsedArgs {
@@ -86,6 +201,22 @@ function option(parsed: ParsedArgs, name: string): string | undefined {
 
 function has(parsed: ParsedArgs, name: string): boolean {
   return parsed.flags.has(name) || parsed.values.has(name);
+}
+
+function validateOptions(
+  parsed: ParsedArgs,
+  values: readonly string[],
+  flags: readonly string[],
+): string | null {
+  const allowedValues = new Set(values);
+  const allowedFlags = new Set(flags);
+  for (const name of parsed.values.keys()) {
+    if (!allowedValues.has(name)) return `unknown option --${name}`;
+  }
+  for (const name of parsed.flags) {
+    if (!allowedFlags.has(name)) return `unknown option --${name}`;
+  }
+  return null;
 }
 
 function usageError(message: string, json = false): Outcome {
@@ -434,9 +565,143 @@ export async function run(
     return { stdout: `${CLI_VERSION}\n`, exitCode: 0 };
   }
   if (first === "config") {
+    const parsed = parseArgs(rest);
+    if (typeof parsed === "string") return usageError(parsed);
+    const invalid = validateOptions(parsed, [], []);
+    if (invalid !== null || parsed.positionals.length > 0)
+      return usageError(invalid ?? "config does not accept arguments");
     return { stdout: `${formatConfig(resolveConfig(cwd))}\n`, exitCode: 0 };
   }
   const planned = PLANNED_COMMANDS.get(first);
+  if (first === "label") {
+    const parsed = parseArgs(rest);
+    if (typeof parsed === "string") return usageError(parsed);
+    const invalid = validateOptions(
+      parsed,
+      ["session", "strategy", "minutes", "labeller"],
+      ["latest", "relabel"],
+    );
+    if (invalid !== null || parsed.positionals.length > 0)
+      return usageError(invalid ?? "label does not accept positional arguments");
+    const strategyValue = option(parsed, "strategy");
+    if (parsed.flags.has("strategy")) return usageError("--strategy requires a value");
+    if (
+      strategyValue !== undefined &&
+      !["uncertain", "stratified", "sequential"].includes(strategyValue)
+    )
+      return usageError("--strategy must be uncertain, stratified, or sequential");
+    const strategy = strategyValue as "uncertain" | "stratified" | "sequential" | undefined;
+    const minutesValue = option(parsed, "minutes");
+    if (parsed.flags.has("minutes")) return usageError("--minutes requires a value");
+    const minutes = minutesValue === undefined ? 15 : Number(minutesValue);
+    if (!Number.isFinite(minutes) || minutes <= 0)
+      return usageError("--minutes must be a positive finite number");
+    const resolved = await resolveRequestedSession(parsed, cwd);
+    if ("exitCode" in resolved) return resolved;
+    const labeller = option(parsed, "labeller");
+    const interactive =
+      options.labelPrompt === undefined
+        ? interactiveLabelPrompt()
+        : { choose: options.labelPrompt, close: () => undefined };
+    try {
+      const result = await labelSession({
+        session: resolved.session,
+        campaignRoot: campaignRootFor(resolved.session, resolved.config.campaignRoot.value),
+        ...(strategy === undefined ? {} : { strategy }),
+        limit: Math.max(1, Math.floor(minutes * 3)),
+        ...(labeller === undefined ? {} : { labeller }),
+        relabel: has(parsed, "relabel"),
+        choose: interactive.choose,
+        play: options.labelPlayer ?? platformLabelPlayer,
+        ...(options.now === undefined ? {} : { now: options.now }),
+      });
+      return {
+        stdout: `label: selected ${result.selected}, skipped ${result.skipped}\n${result.path}\n`,
+        exitCode: 0,
+      };
+    } catch (error) {
+      if (error instanceof LabelUsageError) return usageError(error.message);
+      return {
+        stdout: `label: ${error instanceof Error ? error.message : String(error)}\n`,
+        exitCode: 1,
+      };
+    } finally {
+      interactive.close();
+    }
+  }
+  if (first === "calibrate") {
+    const parsed = parseArgs(rest);
+    if (typeof parsed === "string") return usageError(parsed);
+    const invalid = validateOptions(parsed, ["campaign"], []);
+    if (invalid !== null || parsed.positionals.length > 0)
+      return usageError(invalid ?? "calibrate does not accept positional arguments");
+    if (parsed.flags.has("campaign")) return usageError("--campaign requires a value");
+    const campaign = option(parsed, "campaign") ?? resolveConfig(cwd).campaignRoot.value;
+    const labels = await readLabels(join(campaign, "labels", "all.jsonl"));
+    try {
+      const profiles = (
+        await Promise.all(
+          [
+            ...new Set(
+              labels
+                .map((label) => label.player_id)
+                .filter((player): player is string => player !== undefined && player !== null),
+            ),
+          ]
+            .sort()
+            .map((player) => readProfiles(join(campaign, "profiles"), player)),
+        )
+      ).flat();
+      const partitions = profilePartitions(labels);
+      await seedMissingProfiles(
+        join(campaign, "profiles"),
+        partitions.training.flatMap((label) =>
+          label.player_id === undefined || label.player_id === null || label.embedding === undefined
+            ? []
+            : [
+                {
+                  player_id: label.player_id,
+                  character_id: label.character_id,
+                  embedding: label.embedding,
+                  session_id: label.session_id ?? "unknown",
+                },
+              ],
+        ),
+      );
+      const report = calibrate(labels, undefined, profiles);
+      const persistedProfiles = (
+        await Promise.all(
+          [
+            ...new Set(
+              partitions.training
+                .map((label) => label.player_id)
+                .filter((player): player is string => player != null),
+            ),
+          ]
+            .sort()
+            .map((player) => readProfiles(join(campaign, "profiles"), player)),
+        )
+      ).flat();
+      const persistedAccuracy = measureProfileAccuracy(partitions.held_out, persistedProfiles);
+      if (
+        persistedAccuracy.evaluated !== report.profile_accuracy_after.evaluated ||
+        persistedAccuracy.accuracy !== report.profile_accuracy_after.accuracy
+      )
+        throw new Error("persisted profile bank does not match held-out calibration accuracy");
+      const now = options.now ?? (() => new Date().toISOString());
+      const path = await writeCalibration(join(campaign, "calibration"), report, now);
+      await appendCalibrationDoc(join(cwd, "docs", "calibration.md"), report, now(), campaign);
+      return {
+        stdout: `calibrate: ${report.label_count} labels accuracy=${report.accuracy.toFixed(4)} profile=${(report.profile_accuracy_after.accuracy ?? 0).toFixed(4)}\n${path}\n`,
+        exitCode: 0,
+      };
+    } catch (error) {
+      return {
+        stdout: `calibrate: ${error instanceof Error ? error.message : String(error)}\n`,
+        exitCode: 2,
+      };
+    }
+  }
   if (planned !== undefined) {
     return {
       stdout: `pipeline ${first} ${rest.join(" ")} is not implemented yet - it lands in ticket ${planned}.\n`,
@@ -449,12 +714,24 @@ export async function run(
     if (rest[0] !== "new") return usageError("use pipeline session new <title>");
     const parsed = parseArgs(rest.slice(1));
     if (typeof parsed === "string") return usageError(parsed);
+    const invalid = validateOptions(parsed, ["date", "number"], []);
+    if (invalid !== null) return usageError(invalid);
     return newSession(parsed, cwd);
   }
   if (first === "run" || first === "status" || first === "qa") {
     if (rest.includes("--help") || rest.includes("-h")) return { stdout: USAGE, exitCode: 0 };
     const parsed = parseArgs(rest);
     if (typeof parsed === "string") return usageError(parsed, rest.includes("--json"));
+    const invalid = validateOptions(
+      parsed,
+      first === "run" ? ["session", "stage", "from"] : ["session"],
+      first === "run" ? ["latest", "force", "json"] : ["latest", "json"],
+    );
+    if (invalid !== null) return usageError(invalid, has(parsed, "json"));
+    for (const name of ["session", "stage", "from"] as const) {
+      if (parsed.flags.has(name))
+        return usageError(`--${name} requires a value`, has(parsed, "json"));
+    }
     if (first === "run") return runPipeline(parsed, cwd, options);
     if (first === "status") return status(parsed, cwd);
     return qa(parsed, cwd);

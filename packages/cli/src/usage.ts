@@ -11,10 +11,17 @@ Commands:
   qa --session <id>           Print the intake QA report.               (P1-09)
   notes --session <id>        Render session.md.                       (P3-08)
   label --session <id>        Hand-label utterances for calibration.   (P2-12)
+  calibrate --campaign <dir>  Fit and version scorer calibration.      (P2-12)
 
 Options:
   -h, --help                  Show this help.
   -v, --version               Show the CLI version.
+
+Label options:
+  --minutes <n>               Positive minutes to sample (default 15).
+  --strategy <name>           uncertain, stratified, or sequential.
+  --labeller <name>           Name recorded for each label.
+  --relabel                   Include utterances already present in labels.
 
 Environment:
   DND_SESSIONS_ROOT           Override the sessions directory.
@@ -26,7 +33,4 @@ prints the ticket that will deliver it.
 `;
 
 /** Commands the CLI knows about but has not implemented yet. */
-export const PLANNED_COMMANDS: ReadonlyMap<string, string> = new Map([
-  ["notes", "P3-08"],
-  ["label", "P2-12"],
-]);
+export const PLANNED_COMMANDS: ReadonlyMap<string, string> = new Map([["notes", "P3-08"]]);
