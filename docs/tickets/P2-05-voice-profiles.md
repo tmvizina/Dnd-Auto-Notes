@@ -2,13 +2,14 @@
 id: P2-05
 phase: 2
 title: Voice-mode clustering and the campaign profile bank
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p2-05"
 depends_on: [P2-04, P1-07]
 scope:
   - packages/core/src/persona/voiceModes.ts
   - packages/core/src/persona/profileBank.ts
   - packages/core/src/persona/*.test.ts
+  - docs/calibration.md
 estimate: L
 commit: ""
 ---
