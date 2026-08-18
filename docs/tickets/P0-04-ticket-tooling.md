@@ -2,14 +2,14 @@
 id: P0-04
 phase: 0
 title: Ticket status tooling and handoff doc
-status: approved
+status: done
 assignee: "orchestrator"
 depends_on: [P0-01]
 scope:
   - tools/tickets.mjs
   - docs/HANDOFF.md
 estimate: S
-commit: ""
+commit: "c5dba79"
 ---
 
 ## Why
