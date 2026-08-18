@@ -2,13 +2,13 @@
 id: P1-02
 phase: 1
 title: Sidecar lifecycle from Node
-status: approved
+status: done
 assignee: "orchestrator"
 depends_on: [P1-01, P0-06]
 scope:
   - packages/core/src/sidecar/**
 estimate: M
-commit: ""
+commit: "630bf36"
 ---
 
 ## Why
