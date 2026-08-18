@@ -15,6 +15,7 @@ export const Prosody = z.object({
   intensity_mean: z.number(),
   intensity_std: z.number(),
   spectral_tilt: z.number(),
+  jitter_proxy: z.number(),
   pause_ratio: z.number(),
 });
 export type Prosody = z.infer<typeof Prosody>;

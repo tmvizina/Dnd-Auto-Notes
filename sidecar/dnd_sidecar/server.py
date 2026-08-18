@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 
 from . import __version__, capabilities, logging_setup
 from . import asr as asr_module
+from . import features as features_module
 from . import probe as probe_module
 from . import vad as vad_module
 from .jobs import GPU_GATE, ProgressFn, cancel_job, create_job, get_job, list_jobs
@@ -122,6 +123,29 @@ def start_transcription(request: TranscribeRequest) -> dict[str, str]:
         )
 
     return {"job_id": create_job("transcribe", run)}
+
+
+class FeaturesRequest(BaseModel):
+    """Input for one track's asynchronous embedding/prosody pass."""
+
+    track_path: str = Field(min_length=1)
+    utterances: list[dict[str, object]] = Field(default_factory=list)
+    params: dict[str, object] = Field(default_factory=dict)
+
+
+@app.post("/features")
+def start_features(request: FeaturesRequest) -> dict[str, str]:
+    """Queue feature extraction behind the exclusive model gate."""
+
+    def run(progress: ProgressFn) -> dict[str, object]:
+        return features_module.run_features(
+            request.track_path,
+            request.utterances,
+            request.params,
+            progress,
+        )
+
+    return {"job_id": create_job("features", run)}
 
 
 class EchoRequest(BaseModel):

@@ -8,7 +8,7 @@ import { basename, dirname, join } from "node:path";
  */
 export interface FileIo {
   mkdir(path: string, options: { recursive: true }): Promise<unknown>;
-  writeFile(path: string, data: string, encoding: "utf8"): Promise<void>;
+  writeFile(path: string, data: string | Uint8Array, encoding?: "utf8"): Promise<void>;
   rename(from: string, to: string): Promise<void>;
   rm(path: string, options: { force: true }): Promise<void>;
 }
