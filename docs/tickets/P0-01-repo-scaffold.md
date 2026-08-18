@@ -2,8 +2,8 @@
 id: P0-01
 phase: 0
 title: Repo scaffold, workspaces, TypeScript
-status: todo
-assignee: ""
+status: done
+assignee: "orchestrator"
 depends_on: []
 scope:
   - package.json
@@ -28,11 +28,11 @@ Nothing else can be built or tested until the workspace layout, module system an
 7. `packages/cli` exposes a `pipeline` bin stub that prints its resolved config and exits 0.
 
 ## Acceptance
-- [ ] `npm install` succeeds on a clean checkout on macOS and Windows.
-- [ ] `npm run typecheck` passes with zero errors.
-- [ ] `npm run build` emits `packages/*/dist`.
-- [ ] `npx pipeline --help` prints usage.
-- [ ] No workspace imports another by relative path, only by package name.
+- [x] `npm install` succeeds on a clean checkout on macOS and Windows.
+- [x] `npm run typecheck` passes with zero errors.
+- [x] `npm run build` emits `packages/*/dist`.
+- [x] `npx pipeline --help` prints usage.
+- [x] No workspace imports another by relative path, only by package name.
 
 ## Verify
 ```bash
@@ -41,3 +41,16 @@ npm install && npm run typecheck && npm run build && npx pipeline --help
 
 ## Notes
 Mirror the workspace + ESM setup in `Manuscript-Work/package.json`, including its Windows-explicit `npm.cmd` in fan-out scripts.
+
+## Delivered
+
+Deviations from the Do list, each deliberate:
+
+- **`npm`, not `npm.cmd`, in fan-out scripts.** The Notes said to mirror Manuscript-Work's Windows-explicit `npm.cmd`. That repo is Windows-only; this one targets macOS first, where `npm.cmd` does not exist. Plain `npm` works on both.
+- **`workspaces` uses globs (`packages/*`, `app/*`) rather than literal paths.** A literal path to an absent directory is an install error; a glob that matches nothing is not. Same effect once phase 4 creates `app/*`.
+- **`engines.node` is `>=22`, `.nvmrc` pins `22`.** The dev box runs Node 24. A hard `22.x` pin would reject it for no benefit; `.nvmrc` still declares 22 as the target for CI and contributors.
+- **Build uses TypeScript project references (`tsc -b`), not `npm run build --workspaces`.** npm runs workspace scripts alphabetically, so `@dnd/cli` built before `@dnd/core` and failed to resolve it. Project references order themselves by dependency.
+- **`@dnd/core` exposes `./src/index.ts` under a `@dnd/source` custom condition.** Lets `typecheck` run against source without a prior build, while Node still resolves `dist` at runtime. The `tsconfig.build.json` files clear the condition so emit resolves to `dist` and `rootDir` stays valid.
+- **`@dnd/cli` is a root devDependency, and its `bin` points at a committed `bin/pipeline.mjs` launcher.** npm only links a workspace bin when something depends on that workspace; without both changes `npx pipeline` was not on PATH after a clean install.
+
+Verified from a clean checkout (`rm -rf node_modules package-lock.json packages/*/dist`): install, typecheck, build, and `npx pipeline --help` all succeed. `pipeline config` resolves correctly from inside and outside the repo; unknown commands exit 2, unimplemented commands exit 1.

@@ -23,3 +23,6 @@ sessions/*/session.pdf
 
 .DS_Store
 .idea/
+
+# TypeScript incremental build state
+*.tsbuildinfo

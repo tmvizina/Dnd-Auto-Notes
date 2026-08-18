@@ -1,0 +1,34 @@
+{
+  "name": "dnd-auto-notes",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Turns a Craig recording and a Roll20 log into a D&D session log.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/*",
+    "app/*"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "clean": "tsc -b tsconfig.build.json --clean",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "pipeline": "npm run --silent start --workspace @dnd/cli --",
+    "session:new": "npm run --silent start --workspace @dnd/cli -- session new",
+    "test": "vitest run --config vitest.config.mjs",
+    "test:all": "npm run test && npm run test:py",
+    "test:py": "echo \"sidecar tests land in P0-02\" && exit 0",
+    "tickets": "node tools/tickets.mjs",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@dnd/cli": "*",
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.3"
+  }
+}
