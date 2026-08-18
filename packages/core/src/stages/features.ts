@@ -2,8 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import type { Features as FeaturesArtifact, Prosody } from "../contracts/features.js";
-import type { Manifest } from "../contracts/manifest.js";
-import type { Transcript, Utterance } from "../contracts/utterances.js";
+import type { Utterance } from "../contracts/utterances.js";
 import { SidecarClient } from "../sidecar/client.js";
 import type { RunJobOptions } from "../sidecar/client.js";
 import { nodeIo } from "../session/io.js";
@@ -90,10 +89,6 @@ function finite(value: unknown, label: string): number {
   return value;
 }
 
-function round(value: number): number {
-  return Math.round(value * 1_000_000) / 1_000_000;
-}
-
 function response(value: unknown): SidecarResponse {
   const object = objectValue(value, "features");
   const rawRows = object["rows"];
@@ -121,7 +116,8 @@ function prosody(value: unknown, label: string): Prosody | null {
 
 function embedding(value: unknown, label: string): readonly number[] | null {
   if (value === null || value === undefined) return null;
-  if (!Array.isArray(value) || value.length === 0) throw new TypeError(`${label} must be a non-empty array`);
+  if (!Array.isArray(value) || value.length === 0)
+    throw new TypeError(`${label} must be a non-empty array`);
   return value.map((item, index) => finite(item, `${label}[${String(index)}]`));
 }
 
@@ -129,20 +125,24 @@ function sidecarRows(result: SidecarResponse, utterances: readonly Utterance[]):
   const byId = new Map<string, SidecarRow>();
   for (const row of result.rows) {
     const id = row["utterance_id"];
-    if (typeof id !== "string" || id === "") throw new TypeError("features row has no utterance_id");
+    if (typeof id !== "string" || id === "")
+      throw new TypeError("features row has no utterance_id");
     if (byId.has(id)) throw new Error(`features response repeats utterance ${id}`);
     byId.set(id, row);
   }
   return utterances.map((utterance) => {
     if (utterance.player_id === null) {
-      throw new Error(`utterance ${utterance.id} has no player_id; refusing to infer feature ownership`);
+      throw new Error(
+        `utterance ${utterance.id} has no player_id; refusing to infer feature ownership`,
+      );
     }
     const row = byId.get(utterance.id);
     if (row === undefined) throw new Error(`features response omitted utterance ${utterance.id}`);
     const nested = row["features"];
-    const nestedObject = nested !== null && typeof nested === "object" && !Array.isArray(nested)
-      ? (nested as Record<string, unknown>)
-      : undefined;
+    const nestedObject =
+      nested !== null && typeof nested === "object" && !Array.isArray(nested)
+        ? (nested as Record<string, unknown>)
+        : undefined;
     const rawEmbedding = row["embedding"] ?? nestedObject?.["embedding"];
     const rawProsody = row["prosody"] ?? nestedObject?.["prosody"];
     return {
@@ -171,9 +171,11 @@ function zscore(rows: readonly WorkingRow[]): Map<string, Prosody | null> {
     for (const field of PROSODY_FIELDS) {
       const numbers = baseline.map((item) => item[field]);
       const mean = numbers.reduce((total, value) => total + value, 0) / numbers.length;
-      const variance = numbers.reduce((total, value) => total + (value - mean) ** 2, 0) / numbers.length;
+      const variance =
+        numbers.reduce((total, value) => total + (value - mean) ** 2, 0) / numbers.length;
       const standardDeviation = Math.sqrt(variance);
-      output[field] = standardDeviation <= 1e-12 ? 0 : (row.prosody[field] - mean) / standardDeviation;
+      output[field] =
+        standardDeviation <= 1e-12 ? 0 : (row.prosody[field] - mean) / standardDeviation;
     }
     result.set(row.utterance_id, output);
   }
@@ -199,10 +201,17 @@ function progressFor(
   };
 }
 
-async function writeBinaryAtomic(path: string, data: Uint8Array, io: FileIo = nodeIo): Promise<void> {
+async function writeBinaryAtomic(
+  path: string,
+  data: Uint8Array,
+  io: FileIo = nodeIo,
+): Promise<void> {
   const directory = dirname(path);
   await io.mkdir(directory, { recursive: true });
-  const temporary = join(directory, `.${path.split(/[\\/]/u).at(-1) ?? "features.bin"}.${randomBytes(6).toString("hex")}.tmp`);
+  const temporary = join(
+    directory,
+    `.${path.split(/[\\/]/u).at(-1) ?? "features.bin"}.${randomBytes(6).toString("hex")}.tmp`,
+  );
   try {
     await io.writeFile(temporary, data);
     await io.rename(temporary, path);
@@ -229,11 +238,19 @@ export async function readFeatureEmbedding(
 }
 
 /** Run the features sidecar job for each track and persist JSON plus float32 blob. */
-export async function runFeaturesStage(options: FeaturesStageOptions): Promise<FeaturesStageResult> {
-  const sidecar = options.sidecar ?? options.sidecarClient ?? options.client ?? new SidecarClient(options.sidecarUrl ?? "http://127.0.0.1:8477");
+export async function runFeaturesStage(
+  options: FeaturesStageOptions,
+): Promise<FeaturesStageResult> {
+  const sidecar =
+    options.sidecar ??
+    options.sidecarClient ??
+    options.client ??
+    new SidecarClient(options.sidecarUrl ?? "http://127.0.0.1:8477");
   const manifest = await readArtifact(options.session, "manifest");
   const transcript = await readArtifact(options.session, "transcript");
-  const tracks = [...manifest.tracks].sort((left, right) => compareStrings(left.track_id, right.track_id));
+  const tracks = [...manifest.tracks].sort((left, right) =>
+    compareStrings(left.track_id, right.track_id),
+  );
   const utterancesByTrack = new Map<string, Utterance[]>();
   for (const utterance of transcript.utterances) {
     const list = utterancesByTrack.get(utterance.track_id) ?? [];
@@ -282,27 +299,39 @@ export async function runFeaturesStage(options: FeaturesStageOptions): Promise<F
           ),
         );
         if (typeof result.backend === "string") backend = result.backend;
-        if (typeof result.dimension === "number" && Number.isInteger(result.dimension) && result.dimension > 0) {
+        if (
+          typeof result.dimension === "number" &&
+          Number.isInteger(result.dimension) &&
+          result.dimension > 0
+        ) {
           dimension = result.dimension;
         }
         for (const row of sidecarRows(result, utterances)) rowsById.set(row.utterance_id, row);
       }
       const orderedRows = transcript.utterances.map((utterance) => {
         const row = rowsById.get(utterance.id);
-        if (row === undefined) throw new Error(`features response omitted utterance ${utterance.id}`);
+        if (row === undefined)
+          throw new Error(`features response omitted utterance ${utterance.id}`);
         return row;
       });
       const zscores = zscore(orderedRows);
       const vectors: number[] = [];
       const featureRows = orderedRows.map((row) => {
         if (row.embedding === null || row.prosody === null) {
-          return { utterance_id: row.utterance_id, player_id: row.player_id, offset: null, prosody: null, prosody_z: null };
+          return {
+            utterance_id: row.utterance_id,
+            player_id: row.player_id,
+            offset: null,
+            prosody: null,
+            prosody_z: null,
+          };
         }
         if (row.embedding.length !== dimension) {
           throw new Error(`embedding dimension mismatch for ${row.utterance_id}`);
         }
         const norm = Math.sqrt(row.embedding.reduce((total, value) => total + value * value, 0));
-        if (!Number.isFinite(norm) || norm <= 0) throw new Error(`zero embedding for ${row.utterance_id}`);
+        if (!Number.isFinite(norm) || norm <= 0)
+          throw new Error(`zero embedding for ${row.utterance_id}`);
         const offset = vectors.length * 4;
         for (const value of row.embedding) vectors.push(value / norm);
         return {
@@ -322,7 +351,6 @@ export async function runFeaturesStage(options: FeaturesStageOptions): Promise<F
         min_duration_s: options.minDurationS ?? MIN_FEATURE_DURATION_S,
         rows: featureRows,
       };
-      const artifactPath = options.session.paths.artifact("features");
       await writeBinaryAtomic(blobPath, binary, options.io ?? nodeIo);
       await writeArtifact(options.session, "features", artifact, options.io);
       progress(1, "features complete");
