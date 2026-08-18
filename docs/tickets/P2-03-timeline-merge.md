@@ -2,14 +2,14 @@
 id: P2-03
 phase: 2
 title: Cross-track timeline merge
-status: in_progress
+status: done
 assignee: "luna-p2-03"
 depends_on: [P2-02]
 scope:
   - packages/core/src/stages/transcript.ts
   - packages/core/src/transcript/**
 estimate: M
-commit: ""
+commit: "94d006f"
 ---
 
 ## Why
@@ -28,9 +28,9 @@ Per-track transcripts are not a session. The merged, ordered timeline is the obj
 
 ## Acceptance
 
-- [ ] Merged order matches `truth.json` ordering exactly on the fixture.
-- [ ] Overlaps are marked on both sides and never dropped.
-- [ ] A synthesised bleed case is detected, the primary kept, and a QA warning raised.
-- [ ] Utterance ids are stable across re-runs.
-- [ ] Long monologues split at pause boundaries, never mid-word.
-- [ ] Total speech per player matches the sum of its VAD segments within 1 %.
+- [x] Merged order matches `truth.json` ordering exactly on the fixture.
+- [x] Overlaps are marked on both sides and never dropped.
+- [x] A synthesised bleed case is detected, the primary kept, and a QA warning raised.
+- [x] Utterance ids are stable across re-runs.
+- [x] Long monologues split at pause boundaries, never mid-word.
+- [x] Total speech per player matches the sum of its VAD segments within 1 %.
