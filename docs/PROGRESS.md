@@ -3,7 +3,7 @@
 Single-page status snapshot for the full backlog. Ticket frontmatter remains authoritative; update this file whenever a ticket changes status or records its implementation commit.
 
 **Last updated:** 2026-08-18
-**Overall:** 35 done, 2 in progress, 1 blocked, 14 todo - 52 total (67.3% done)
+**Overall:** 35 done, 3 in progress, 1 blocked, 13 todo - 52 total (67.3% done)
 
 ## Phase 0 — Foundations
 
@@ -55,7 +55,7 @@ Single-page status snapshot for the full backlog. Ticket frontmatter remains aut
 | [P3-01](tickets/P3-01-event-model.md)         | done        | luna-p3-01 | `6111324` | Event model and timeline assembly |
 | [P3-02](tickets/P3-02-beat-segmentation.md)   | done        | luna-p3-02 | `6ca469c` | Beat segmentation                 |
 | [P3-03](tickets/P3-03-encounters.md)          | in_progress | luna-p3-03 | -         | Combat encounter reconstruction   |
-| [P3-04](tickets/P3-04-checks-social.md)       | todo        | —          | —         | Skill checks and social scenes    |
+| [P3-04](tickets/P3-04-checks-social.md)       | in_progress | luna-p3-04 | -         | Skill checks and social scenes    |
 | [P3-05](tickets/P3-05-action-descriptions.md) | todo        | —          | —         | Action description extraction     |
 | [P3-06](tickets/P3-06-notes-renderer.md)      | todo        | —          | —         | Notes renderer                    |
 | [P3-07](tickets/P3-07-llm-prose-pass.md)      | todo        | —          | —         | Grounded LLM prose pass           |

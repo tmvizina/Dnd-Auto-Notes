@@ -2,8 +2,8 @@
 id: P3-04
 phase: 3
 title: Skill checks and social scenes
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p3-04"
 depends_on: [P3-02]
 scope:
   - packages/core/src/outline/checks.ts
