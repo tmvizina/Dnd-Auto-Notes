@@ -2,7 +2,7 @@
 id: P2-05
 phase: 2
 title: Voice-mode clustering and the campaign profile bank
-status: in_progress
+status: done
 assignee: "luna-p2-05"
 depends_on: [P2-04, P1-07]
 scope:
@@ -12,7 +12,7 @@ scope:
   - packages/core/src/persona/fixtures/**
   - docs/calibration.md
 estimate: L
-commit: ""
+commit: "2109d87"
 ---
 
 ## Why
@@ -31,12 +31,12 @@ This is the mechanism that makes the system improve over time. A player's table 
 
 ## Acceptance
 
-- [ ] The bake-off is run and its numbers are in `docs/calibration.md`, with the chosen representation justified by them.
-- [ ] On the fixture, per-player clustering recovers the ground-truth voice count within one for each player.
-- [ ] A populated bank labels clusters in a second synthetic session at above the recorded accuracy threshold.
-- [ ] An ambiguous cluster returns unlabelled with the margin that caused it, and never a guess.
-- [ ] `updateProfile` is journalled and revertible.
-- [ ] A cold-start run completes with everything unlabelled and no errors.
+- [x] The bake-off is run and its numbers are in `docs/calibration.md`, with the chosen representation justified by them.
+- [x] On the fixture, per-player clustering recovers the ground-truth voice count within one for each player.
+- [x] A populated bank labels clusters in a second synthetic session at above the recorded accuracy threshold.
+- [x] An ambiguous cluster returns unlabelled with the margin that caused it, and never a guess.
+- [x] `updateProfile` is journalled and revertible.
+- [x] A cold-start run completes with everything unlabelled and no errors.
 
 ## Notes
 

@@ -3,7 +3,7 @@
 Single-page status snapshot for the full backlog. Ticket frontmatter remains authoritative; update this file whenever a ticket changes status or records its implementation commit.
 
 **Last updated:** 2026-08-18
-**Overall:** 26 done, 2 in progress, 1 blocked, 23 todo - 52 total (50.0% done)
+**Overall:** 27 done, 1 in progress, 1 blocked, 23 todo - 52 total (51.9% done)
 
 ## Phase 0 — Foundations
 
@@ -39,7 +39,7 @@ Single-page status snapshot for the full backlog. Ticket frontmatter remains aut
 | [P2-02](tickets/P2-02-asr.md)                  | done        | luna-p2-02 | `d140b8a` | ASR with word timestamps                        |
 | [P2-03](tickets/P2-03-timeline-merge.md)       | done        | luna-p2-03 | `94d006f` | Cross-track timeline merge                      |
 | [P2-04](tickets/P2-04-utterance-features.md)   | done        | luna-p2-04 | `12d7b10` | Utterance embeddings and prosody features       |
-| [P2-05](tickets/P2-05-voice-profiles.md)       | in_progress | luna-p2-05 | -         | Voice-mode clustering and campaign profile bank |
+| [P2-05](tickets/P2-05-voice-profiles.md)       | done        | luna-p2-05 | `2109d87` | Voice-mode clustering and campaign profile bank |
 | [P2-06](tickets/P2-06-lexical-rules.md)        | done        | luna-p2-06 | `b25f2c9` | Lexical rule engine                             |
 | [P2-07](tickets/P2-07-persona-scorer.md)       | todo        | —          | —         | Persona scorer and flagging                     |
 | [P2-08](tickets/P2-08-dm-npc.md)               | todo        | —          | —         | DM-to-NPC assignment                            |
