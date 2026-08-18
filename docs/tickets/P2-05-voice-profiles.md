@@ -9,6 +9,7 @@ scope:
   - packages/core/src/persona/voiceModes.ts
   - packages/core/src/persona/profileBank.ts
   - packages/core/src/persona/*.test.ts
+  - packages/core/src/persona/fixtures/**
   - docs/calibration.md
 estimate: L
 commit: ""
