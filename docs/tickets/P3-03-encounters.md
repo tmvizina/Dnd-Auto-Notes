@@ -2,8 +2,8 @@
 id: P3-03
 phase: 3
 title: Combat encounter reconstruction
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p3-03"
 depends_on: [P3-02]
 scope:
   - packages/core/src/outline/encounter.ts
