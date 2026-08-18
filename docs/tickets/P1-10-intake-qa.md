@@ -12,6 +12,7 @@ scope:
   - packages/core/src/stages/intake.test.ts
   - packages/cli/src/cli.ts
   - packages/cli/src/config.ts
+  - packages/cli/src/config.test.ts
   - packages/cli/src/pipeline.test.ts
 estimate: S
 commit: ""
