@@ -10,6 +10,8 @@ import {
   Seconds,
   UtteranceId,
 } from "./common.js";
+import { PersonaMode } from "./attribution.js";
+import { Roll, TurnOrderEvent } from "./timeline.js";
 
 /**
  * The single ordered stream the renderer and the app both read. Every event
@@ -42,8 +44,13 @@ export const SessionEvent = z.object({
   speaker_player_id: z.string().nullable().default(null),
   speaker_character_id: CharacterRef.nullable().default(null),
   speaker_display: z.string().optional(),
+  character_display: z.string().optional(),
   is_dm: z.boolean().default(false),
   text: z.string().optional(),
+  mode: PersonaMode.optional(),
+  /** Roll evidence is retained on the event even when its announcement is linked to speech. */
+  rolls: z.array(Roll).default([]),
+  turnorder: TurnOrderEvent.optional(),
 });
 export type SessionEvent = z.infer<typeof SessionEvent>;
 

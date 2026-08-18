@@ -9,6 +9,16 @@ export * from "./intake/craig/index.js";
 export * from "./intake/roll20/index.js";
 export * from "./qa/index.js";
 export * from "./stages/intake.js";
+export { buildSessionEvents, OutlineEventError, SessionEventTimeline } from "./outline/events.js";
+export type {
+  OutlineBuildInput,
+  OutlineChat,
+  OutlineEvent,
+  OutlineEventKind,
+  OutlineNameRegistry,
+  SessionEvent as OutlineSessionEvent,
+} from "./outline/events.js";
+export * from "./stages/outline.js";
 
 /** Bumped when an on-disk artifact shape changes in a way stages must notice. */
 export const CORE_VERSION = "0.1.0";
