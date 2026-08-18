@@ -9,6 +9,7 @@ scope:
   - packages/core/src/outline/encounter.ts
   - packages/core/src/outline/encounter.test.ts
   - packages/core/src/contracts/events.ts
+  - packages/core/src/index.ts
 estimate: L
 commit: ""
 ---
