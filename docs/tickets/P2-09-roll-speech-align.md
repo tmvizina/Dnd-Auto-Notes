@@ -2,8 +2,8 @@
 id: P2-09
 phase: 2
 title: Roll to speech time anchoring
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p2-09"
 depends_on: [P2-03, P1-06]
 scope:
   - packages/core/src/align/**
