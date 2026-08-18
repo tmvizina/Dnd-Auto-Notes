@@ -3,7 +3,7 @@
 Single-page status snapshot for the full backlog. Ticket frontmatter remains authoritative; update this file whenever a ticket changes status or records its implementation commit.
 
 **Last updated:** 2026-08-18
-**Overall:** 24 done, 3 in progress, 1 blocked, 24 todo - 52 total (46.2% done)
+**Overall:** 25 done, 2 in progress, 1 blocked, 24 todo - 52 total (48.1% done)
 
 ## Phase 0 — Foundations
 
@@ -75,7 +75,7 @@ Single-page status snapshot for the full backlog. Ticket frontmatter remains aut
 | [P4-08](tickets/P4-08-review-page.md)         | todo        | —            | —         | Flagged-span review page                  |
 | [P4-09](tickets/P4-09-notes-page.md)          | todo        | —            | —         | Notes viewer and editor                   |
 | [P4-10](tickets/P4-10-pdf-export.md)          | todo        | —            | —         | PDF export                                |
-| [P4-11](tickets/P4-11-settings.md)            | in_progress | luna-p4-11   | -         | Settings                                  |
+| [P4-11](tickets/P4-11-settings.md)            | done        | luna-p4-11   | `70f52cc` | Settings                                  |
 
 ## Phase 5 — Hardening and release
 

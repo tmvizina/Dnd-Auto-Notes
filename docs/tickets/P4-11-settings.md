@@ -2,7 +2,7 @@
 id: P4-11
 phase: 4
 title: Settings
-status: in_progress
+status: done
 assignee: "luna-p4-11"
 depends_on: [P4-03]
 scope:
@@ -23,7 +23,7 @@ scope:
   - app/desktop/src/main/main.ts
   - app/desktop/src/main/main.test.ts
 estimate: S
-commit: ""
+commit: "70f52cc"
 ---
 
 ## Why
@@ -41,8 +41,8 @@ The one machine-specific thing this app has is where its models and CLIs live. T
 
 ## Acceptance
 
-- [ ] Every setting persists and takes effect without a restart, or says clearly that a restart is needed.
-- [ ] Test connection succeeds against a local OpenAI-compatible server and fails informatively when unreachable.
-- [ ] Capability-gated options are disabled with a reason.
-- [ ] Threshold changes warn about invalidation.
-- [ ] No credential value is ever written to the database or the settings file.
+- [x] Every setting persists and takes effect without a restart, or says clearly that a restart is needed.
+- [x] Test connection succeeds against a local OpenAI-compatible server and fails informatively when unreachable.
+- [x] Capability-gated options are disabled with a reason.
+- [x] Threshold changes warn about invalidation.
+- [x] No credential value is ever written to the database or the settings file.
