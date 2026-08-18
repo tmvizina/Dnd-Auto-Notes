@@ -2,7 +2,7 @@
 id: P4-03
 phase: 4
 title: Renderer transport and app shell
-status: in_progress
+status: done
 assignee: "luna-p4-03"
 depends_on: [P4-02]
 scope:
@@ -12,7 +12,7 @@ scope:
   - electron-builder.yml
   - package-lock.json
 estimate: M
-commit: ""
+commit: "5cd657d"
 ---
 
 ## Why
@@ -30,8 +30,8 @@ The UI should not know or care that it is inside Electron. A transport abstracti
 
 ## Acceptance
 
-- [ ] The app renders in the packaged shell and in a plain browser (with operations reporting unavailable).
-- [ ] All four routes reachable; deep links restore on reload.
-- [ ] The status strip reflects real sidecar health.
-- [ ] A 5,000-row list scrolls at 60 fps.
-- [ ] No external network requests are issued at any point.
+- [x] The app renders in the packaged shell and in a plain browser (with operations reporting unavailable).
+- [x] All four routes reachable; deep links restore on reload.
+- [x] The status strip reflects real sidecar health.
+- [x] A 5,000-row list scrolls at 60 fps.
+- [x] No external network requests are issued at any point.

@@ -8,9 +8,9 @@ The living state of the build. The orchestrator appends to this after every inte
 
 In phase 1, `P1-01` through `P1-09` are done. `P1-10` (intake QA report) is now ready.
 
-In phase 4, `P4-01`, `P4-02` and `P4-04` are done: the secure Electron shell, validated IPC boundary and demand-driven sidecar supervision are in place. `P4-03` is ready but is serialized behind active work because its package-lock scope conservatively overlaps every ticket.
+In phase 4, `P4-01` through `P4-04` are done: the secure Electron shell, validated IPC boundary, React renderer shell and demand-driven sidecar supervision are in place. `P4-05` is now ready.
 
-The committed repo builds, typechecks, tests and lints clean: 357 TypeScript tests and 40 Python tests after P1-09; `npm run tickets -- --check` is green across all 52 tickets.
+The committed repo builds, typechecks, tests and lints clean: 375 TypeScript tests and 40 Python tests after P4-03; `npm run tickets -- --check` is green across all 52 tickets.
 
 In place:
 
@@ -63,6 +63,7 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 | `5dd325b` | `P1-06` | Roll20 timestamp recovery and evidence spike | 7 focused tests passed; independent review passed after the resolver was exported through the public Roll20 barrel. The combined full gate passed 331 TS tests and 40 Python tests plus typecheck/lint/format. Real archive evidence showed all 98 ids decodable but one backward step across a multi-session capture, so that capture honestly downgrades to `order_only`. |
 | `f235a15` | `P4-04` | Demand-driven desktop sidecar supervision | Independent review passed after proving startup/restart shutdown races cannot orphan late-owned children. Focused review covered 49 tests; the combined full gate passed 345 TS tests and 40 Python tests plus typecheck/lint/format. Missing environments expose a validated setup command without installing, retries cap, adopted processes survive quit, logs are bounded, and accepted runs receive clear failure events. |
 | `ee50c13` | `P1-09` | Canonical intake stage and pipeline CLI | Independent review passed after mapped and unmapped Roll20 rolls were persisted in the validated manifest, the duplicate CLI intake implementation was removed, and stage progress reached TTY/NDJSON output. 23 focused tests and the full 357 TS/40 Python gate passed with typecheck, build, lint and format. Skip completed under one second; force, defects, status, QA, latest and arbitrary-cwd paths were exercised. |
+| `5cd657d` | `P4-03` | React renderer transport and app shell | Independent review passed 18 focused UI tests and the full 375 TS/40 Python gate. Desktop production build and an unpacked electron-builder package succeeded; asar and `resources/ui` contents were inspected. The 5,000-row benchmark rendered at most 19 rows in about 0.41 ms per sampled calculation, transport matches the preload bridge, browser operations fail explicitly, and the built bundle contains no external requests. |
 
 ## Known risks
 
@@ -77,7 +78,7 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 Track A (audio) and track C (persistence) are finished. What remains in phase 1 is the Roll20 chain and the two tickets that consume everything:
 
 1. **`P1-10`** (QA report) is ready now; read the carried items below before implementation.
-2. **`P4-03`** (renderer transport and shell) is also ready and can start once no other ticket is active because its package-lock scope is conservatively global.
+2. **`P2-01`** (VAD) and **`P4-05`** (sessions/intake UI) are also ready and have disjoint scopes.
 
 `P4-03` (renderer transport and shell) is ready and can proceed in parallel.
 
