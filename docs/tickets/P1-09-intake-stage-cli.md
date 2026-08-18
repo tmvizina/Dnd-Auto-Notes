@@ -4,7 +4,7 @@ phase: 1
 title: Intake stage and the pipeline CLI
 status: todo
 assignee: ""
-depends_on: [P1-03, P1-05, P1-07, P1-08]
+depends_on: [P1-03, P1-05, P1-06, P1-07, P1-08]
 scope:
   - packages/core/src/stages/intake.ts
   - packages/cli/src/**
