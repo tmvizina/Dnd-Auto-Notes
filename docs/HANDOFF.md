@@ -6,11 +6,11 @@ The living state of the build. The orchestrator appends to this after every inte
 
 **Phase 0 is complete** and **phase 1 is over half done.** `P0-01`, `P0-02`, `P0-04`, `P0-05` and `P0-06` are done; `P0-03` (CI) is written and locally verified but **blocked** — its acceptance is a green CI run, which needs a push.
 
-In phase 1, `P1-01`, `P1-02`, `P1-03`, `P1-04`, `P1-05`, `P1-07` and `P1-08` are done. Roll20 timestamp recovery (`P1-06`) remains, and `P1-09` (intake stage + CLI) waits on it.
+In phase 1, `P1-01` through `P1-08` are done. `P1-09` (intake stage + CLI) is now ready.
 
 In phase 4, `P4-01` and `P4-02` are done: the secure Electron shell and its validated main/preload IPC boundary are in place. `P4-03` is now ready.
 
-The committed repo builds, typechecks, tests and lints clean: 318 TypeScript tests and 40 Python tests after P4-02; `npm run tickets -- --check` is green across all 52 tickets.
+The committed repo builds, typechecks, tests and lints clean: 331 TypeScript tests and 40 Python tests after P1-06 over the combined P1-06/P4-04 worktree; `npm run tickets -- --check` is green across all 52 tickets.
 
 In place:
 
@@ -60,10 +60,11 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 | `25f969a` | `P1-05` | Pure Roll20 JSON/HTML capture parser | 8 parser/generator-backed tests passed, including semantic JSON/HTML equivalence, advantage, dropped dice, combat markers, unknown templates, sequence ordering and NPC-label rejection. Full validation over the combined disjoint worktree passed 318 TS tests and 40 Python tests plus typecheck/lint/format. No code blocker remains; real Roll20 markup is still unverified. |
 
 | `5b0dbd9` | `P4-02` | Validated desktop IPC contracts and preload bridge | 21 focused IPC tests passed; the combined full gate passed 318 TS tests and 40 Python tests plus typecheck/lint/format. Sender/document identity, envelopes, request/response byte caps, channel literals, recursive sanitization, stack removal, settings allow-list and main-process registration were verified. No blocker remains. |
+| `5dd325b` | `P1-06` | Roll20 timestamp recovery and evidence spike | 7 focused tests passed; independent review passed after the resolver was exported through the public Roll20 barrel. The combined full gate passed 331 TS tests and 40 Python tests plus typecheck/lint/format. Real archive evidence showed all 98 ids decodable but one backward step across a multi-session capture, so that capture honestly downgrades to `order_only`. |
 
 ## Known risks
 
-1. **Roll20 DOM is not an API.** `P1-04` retains raw `outerHTML` per message so a markup change only breaks parsing, not the recording, and its DOM behavior is covered by synthetic VM checks. Validation in an actual Roll20 tab is still pending; `P1-05` depends on the retained markup.
+1. **Roll20 DOM is not an API.** `P1-04` retains raw `outerHTML` per message so a markup change only breaks parsing, not the recording, and its DOM behavior is covered by synthetic VM checks. P1-05 successfully parsed the supplied real saved page without dropping records, but validation of the live capture script in an actual Roll20 tab is still pending.
 2. **Voice separability is unproven.** If a player's character voice is acoustically indistinguishable from their table voice, `P2-05` degrades to lexical evidence alone and the flagged fraction rises. The bake-off in `P2-05` measures this before the scorer is tuned.
 3. **Craig track alignment is assumed, not guaranteed.** `P1-03` now verifies it against the median duration and sets `aligned: false` per track, with `TRACK_DURATION_MISMATCH` naming the outliers. The check is proven against a synthetic outlier only; whether real Craig downloads ever violate the shared t=0 is still unknown until `P5-01`.
 4. **Mic bleed from co-located players** would silently double every line. `P2-03` detects it; it has not been tested against a real co-located table.
@@ -73,8 +74,8 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 
 Track A (audio) and track C (persistence) are finished. What remains in phase 1 is the Roll20 chain and the two tickets that consume everything:
 
-1. **`P1-06` timestamp recovery** — ready now and the last Roll20 prerequisite.
-2. **`P1-09`** (intake stage + CLI) follows it; **`P1-10`** (QA report) follows intake.
+1. **`P1-09`** (intake stage + CLI) is ready now.
+2. **`P1-10`** (QA report) follows intake.
 
 `P4-03` (renderer transport and shell) is ready and can proceed in parallel.
 

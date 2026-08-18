@@ -2,7 +2,7 @@
 id: P1-06
 phase: 1
 title: Roll20 timestamp recovery
-status: in_progress
+status: done
 assignee: "luna-p1-06"
 depends_on: [P1-05]
 scope:
@@ -11,7 +11,7 @@ scope:
   - packages/core/src/intake/roll20/index.ts
   - docs/spikes/roll20-timestamps.md
 estimate: M
-commit: ""
+commit: "5dd325b"
 ---
 
 ## Why
@@ -31,11 +31,11 @@ If Roll20 events carry real wall-clock time, aligning them to the audio is arith
 
 ## Acceptance
 
-- [ ] The spike document states the answer with the evidence that produced it.
-- [ ] All three bases are implemented and unit-tested against fixtures.
-- [ ] A decoded timestamp that violates monotonicity downgrades the basis rather than producing garbage times.
-- [ ] Events outside the recording window are warned about, not silently clamped.
-- [ ] `order_only` captures still produce a usable ordering with `t_wall_ms: null` throughout.
+- [x] The spike document states the answer with the evidence that produced it.
+- [x] All three bases are implemented and unit-tested against fixtures.
+- [x] A decoded timestamp that violates monotonicity downgrades the basis rather than producing garbage times.
+- [x] Events outside the recording window are warned about, not silently clamped.
+- [x] `order_only` captures still produce a usable ordering with `t_wall_ms: null` throughout.
 
 ## Notes
 
