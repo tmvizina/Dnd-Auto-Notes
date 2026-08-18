@@ -28,7 +28,11 @@ function fromEnv(name: string): string | undefined {
   return trimmed === "" ? undefined : trimmed;
 }
 
-function resolvePath(envName: string, fallbackBase: string, fallbackLeaf: string): ResolvedValue<string> {
+function resolvePath(
+  envName: string,
+  fallbackBase: string,
+  fallbackLeaf: string,
+): ResolvedValue<string> {
   const override = fromEnv(envName);
   if (override !== undefined) return { value: resolve(override), source: "env" };
   return { value: join(fallbackBase, fallbackLeaf), source: "default" };
