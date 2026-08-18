@@ -8,9 +8,9 @@ The living state of the build. The orchestrator appends to this after every inte
 
 In phase 1, `P1-01`, `P1-02`, `P1-03`, `P1-04`, `P1-05`, `P1-07` and `P1-08` are done. Roll20 timestamp recovery (`P1-06`) remains, and `P1-09` (intake stage + CLI) waits on it.
 
-In phase 4, `P4-01` is done: the Electron workspace, locked-down main/preload boundary, packaged custom protocol, static renderer, and dmg/nsis packaging configuration are in place. `P4-02` is now ready.
+In phase 4, `P4-01` and `P4-02` are done: the secure Electron shell and its validated main/preload IPC boundary are in place. `P4-03` is now ready.
 
-The committed repo builds, typechecks, tests and lints clean: 297 TypeScript tests and 40 Python tests after P1-05; `npm run tickets -- --check` is green across all 52 tickets.
+The committed repo builds, typechecks, tests and lints clean: 318 TypeScript tests and 40 Python tests after P4-02; `npm run tickets -- --check` is green across all 52 tickets.
 
 In place:
 
@@ -59,6 +59,8 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 
 | `25f969a` | `P1-05` | Pure Roll20 JSON/HTML capture parser | 8 parser/generator-backed tests passed, including semantic JSON/HTML equivalence, advantage, dropped dice, combat markers, unknown templates, sequence ordering and NPC-label rejection. Full validation over the combined disjoint worktree passed 318 TS tests and 40 Python tests plus typecheck/lint/format. No code blocker remains; real Roll20 markup is still unverified. |
 
+| `5b0dbd9` | `P4-02` | Validated desktop IPC contracts and preload bridge | 21 focused IPC tests passed; the combined full gate passed 318 TS tests and 40 Python tests plus typecheck/lint/format. Sender/document identity, envelopes, request/response byte caps, channel literals, recursive sanitization, stack removal, settings allow-list and main-process registration were verified. No blocker remains. |
+
 ## Known risks
 
 1. **Roll20 DOM is not an API.** `P1-04` retains raw `outerHTML` per message so a markup change only breaks parsing, not the recording, and its DOM behavior is covered by synthetic VM checks. Validation in an actual Roll20 tab is still pending; `P1-05` depends on the retained markup.
@@ -74,7 +76,7 @@ Track A (audio) and track C (persistence) are finished. What remains in phase 1 
 1. **`P1-06` timestamp recovery** — ready now and the last Roll20 prerequisite.
 2. **`P1-09`** (intake stage + CLI) follows it; **`P1-10`** (QA report) follows intake.
 
-`P4-02` (IPC contracts and validation) is also ready and can proceed in parallel.
+`P4-03` (renderer transport and shell) is ready and can proceed in parallel.
 
 Run `npm run tickets -- --ready` rather than trusting this list.
 

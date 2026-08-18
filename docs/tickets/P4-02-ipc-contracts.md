@@ -2,7 +2,7 @@
 id: P4-02
 phase: 4
 title: IPC contracts and validation
-status: approved
+status: done
 assignee: "orchestrator"
 depends_on: [P4-01]
 scope:
@@ -12,7 +12,7 @@ scope:
   - app/desktop/src/main/main.ts
   - app/desktop/src/preload/**
 estimate: M
-commit: ""
+commit: "5b0dbd9"
 ---
 
 ## Why
