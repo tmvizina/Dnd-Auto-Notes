@@ -2,12 +2,14 @@
 id: P4-01
 phase: 4
 title: Electron scaffold
-status: todo
-assignee: ""
+status: approved
+assignee: "orchestrator"
 depends_on: [P0-06]
 scope:
   - app/desktop/**
   - electron-builder.yml
+  - package.json
+  - package-lock.json
 estimate: M
 commit: ""
 ---
@@ -27,12 +29,12 @@ The security posture of an Electron app is decided in the first hundred lines an
 
 ## Acceptance
 
-- [ ] `npm run dev` opens a window loading the Vite dev server.
-- [ ] A packaged build opens the same window from the custom scheme with the CSP applied.
-- [ ] `window.require` and `process` are undefined in the renderer.
-- [ ] Navigation to an external URL is blocked; `window.open` is denied.
-- [ ] A second launch focuses the existing window.
-- [ ] The packaged app starts with no network access.
+- [x] `npm run dev` opens a window loading the Vite dev server.
+- [x] A packaged build opens the same window from the custom scheme with the CSP applied.
+- [x] `window.require` and `process` are undefined in the renderer.
+- [x] Navigation to an external URL is blocked; `window.open` is denied.
+- [x] A second launch focuses the existing window.
+- [x] The packaged app starts with no network access.
 
 ## Notes
 

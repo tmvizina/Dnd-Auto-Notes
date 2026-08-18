@@ -1,0 +1,53 @@
+appId: com.dndautonotes.desktop
+productName: D&D Auto Notes
+asar: true
+
+# Native modules are rebuilt explicitly by app/desktop's rebuild:electron
+# script. Letting electron-builder rebuild implicitly can target the invoking
+# Node ABI instead of the pinned Electron ABI.
+npmRebuild: false
+nativeRebuilder: sequential
+
+directories:
+  app: app/desktop
+  output: dist/desktop
+
+files:
+  - from: dist
+    to: dist
+    filter:
+      - main/**/*.js
+      - shared/**/*.js
+      - preload/index.cjs
+  - package.json
+
+# The first SQLite-consuming ticket will add the native dependency. Keep its
+# binary outside the asar now so packaging cannot silently change that rule.
+asarUnpack:
+  - node_modules/better-sqlite3/build/Release/*.node
+
+# The shell's initial page is deliberately tiny and static. The renderer
+# workspace can replace this resource with its built output without changing
+# the privileged protocol or preload boundary.
+extraResources:
+  - from: app/desktop/renderer
+    to: ui
+    filter:
+      - "**/*"
+
+mac:
+  target:
+    - dmg
+
+win:
+  target:
+    - nsis
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+
+artifactName: "${productName}-${version}-${arch}.${ext}"
