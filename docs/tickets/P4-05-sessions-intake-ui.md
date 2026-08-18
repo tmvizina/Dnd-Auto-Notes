@@ -2,8 +2,8 @@
 id: P4-05
 phase: 4
 title: Sessions list and intake UI
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p4-05"
 depends_on: [P4-03, P1-09]
 scope:
   - app/ui/src/pages/Sessions.tsx

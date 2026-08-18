@@ -2,8 +2,8 @@
 id: P2-01
 phase: 2
 title: VAD segmentation per track
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p2-01"
 depends_on: [P1-01, P1-09]
 scope:
   - sidecar/dnd_sidecar/vad.py

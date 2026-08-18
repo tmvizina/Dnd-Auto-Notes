@@ -2,8 +2,8 @@
 id: P1-10
 phase: 1
 title: Intake QA report
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p1-10"
 depends_on: [P1-09]
 scope:
   - packages/core/src/qa/**
