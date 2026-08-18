@@ -7,6 +7,10 @@ assignee: ""
 depends_on: [P4-02]
 scope:
   - app/ui/**
+  - app/desktop/package.json
+  - app/desktop/scripts/dev.mjs
+  - electron-builder.yml
+  - package-lock.json
 estimate: M
 commit: ""
 ---

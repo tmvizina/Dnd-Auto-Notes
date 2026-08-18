@@ -2,8 +2,8 @@
 id: P1-06
 phase: 1
 title: Roll20 timestamp recovery
-status: todo
-assignee: ""
+status: in_progress
+assignee: "luna-p1-06"
 depends_on: [P1-05]
 scope:
   - packages/core/src/intake/roll20/time.ts
