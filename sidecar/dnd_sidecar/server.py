@@ -20,7 +20,8 @@ from pydantic import BaseModel, Field
 
 from . import __version__, capabilities, logging_setup
 from . import probe as probe_module
-from .jobs import GPU_GATE, cancel_job, create_job, get_job, list_jobs
+from . import vad as vad_module
+from .jobs import GPU_GATE, ProgressFn, cancel_job, create_job, get_job, list_jobs
 
 logging_setup.configure()
 log = logging.getLogger(__name__)
@@ -67,6 +68,23 @@ def probe(request: ProbeRequest) -> dict[str, Any]:
     measure, and a whole session should not be lost to one corrupt file.
     """
     return {"files": [probe_module.probe_file(path, media=request.media) for path in request.paths]}
+
+
+class VADRequest(BaseModel):
+    """Input for one track's asynchronous VAD pass."""
+
+    track_path: str = Field(min_length=1)
+    params: dict[str, object] = Field(default_factory=dict)
+
+
+@app.post("/vad")
+def start_vad(request: VADRequest) -> dict[str, str]:
+    """Queue VAD work so decoding never blocks the HTTP request thread."""
+
+    def run(progress: ProgressFn) -> dict[str, object]:
+        return vad_module.run_vad(request.track_path, request.params, progress)
+
+    return {"job_id": create_job("vad", run)}
 
 
 class EchoRequest(BaseModel):
