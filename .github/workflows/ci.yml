@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A new push to the same branch makes the previous run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  # macOS is the runtime target: it is where the models live, so it runs the
+  # whole thing including the Python sidecar suite.
+  macos:
+    name: macOS (primary)
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Backlog is consistent
+        run: npm run tickets -- --check
+
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+
+      - name: Built CLI answers
+        run: npx pipeline --help
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: sidecar/pyproject.toml
+
+      - name: Sidecar environment
+        run: uv venv && uv pip install -e ".[dev]"
+        working-directory: sidecar
+
+      # Must pass with no model package installed — that is the point of the
+      # split between base and optional dependencies.
+      - run: npm run test:py
+
+  # Windows is where the repo is edited, not where it runs. This job exists to
+  # catch path and shell assumptions, so it skips the Python leg deliberately.
+  windows:
+    name: Windows (smoke)
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+
+      - name: Built CLI answers
+        run: npx pipeline --help
