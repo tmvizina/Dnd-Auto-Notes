@@ -29,3 +29,8 @@ sessions/*/session.pdf
 # TypeScript incremental build state
 *.tsbuildinfo
 test/fixtures/session-synthetic/
+
+# vitest scratch roots — tests mkdtemp into the repo so the paths stay short
+.p*-vitest-tmp/
+.p*-calibration-/
+node-compile-cache/

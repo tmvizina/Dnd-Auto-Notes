@@ -2,14 +2,14 @@
 id: P3-04
 phase: 3
 title: Skill checks and social scenes
-status: in_progress
+status: done
 assignee: "luna-p3-04"
 depends_on: [P3-02]
 scope:
   - packages/core/src/outline/checks.ts
   - packages/core/src/outline/checks.test.ts
 estimate: M
-commit: ""
+commit: "c9edd1e"
 ---
 
 ## Why
@@ -26,8 +26,8 @@ Outside combat, checks are the beats that matter: the failed persuasion that sta
 
 ## Acceptance
 
-- [ ] Each fixture check pairs with its stated intent.
-- [ ] Verdicts appear only when the adjudication was spoken; otherwise `unknown`.
-- [ ] Repeated attempts group into one sequence.
-- [ ] Promises and stated stakes surface as candidate threads.
-- [ ] No DC is ever fabricated.
+- [x] Each fixture check pairs with its stated intent.
+- [x] Verdicts appear only when the adjudication was spoken; otherwise `unknown`.
+- [x] Repeated attempts group into one sequence.
+- [x] Promises and stated stakes surface as candidate threads.
+- [x] No DC is ever fabricated.

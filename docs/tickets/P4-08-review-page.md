@@ -2,7 +2,7 @@
 id: P4-08
 phase: 4
 title: Flagged-span review page
-status: in_progress
+status: done
 assignee: "luna-p4-08"
 depends_on: [P4-06, P2-08]
 scope:
@@ -26,7 +26,7 @@ scope:
   - app/desktop/src/main/main.ts
   - app/desktop/src/main/main.test.ts
 estimate: L
-commit: ""
+commit: "e0d8fbb"
 ---
 
 ## Why
@@ -46,10 +46,10 @@ This page is where the system learns. Every correction here both fixes this sess
 
 ## Acceptance
 
-- [ ] No `<audio>` element has a `src` before play is pressed, proven by a DOM test.
-- [ ] Memory is flat after playing 100 clips sequentially.
-- [ ] Resolving a flag updates the attribution, the flag row and the label file.
-- [ ] A profile update is journalled and revertible from the UI.
-- [ ] Bulk cluster labelling applies to every member.
-- [ ] Full keyboard operation with no mouse.
-- [ ] Re-running attribution after corrections is offered and works.
+- [x] No `<audio>` element has a `src` before play is pressed, proven by a DOM test.
+- [x] Memory is flat after playing 100 clips sequentially.
+- [x] Resolving a flag updates the attribution, the flag row and the label file.
+- [x] A profile update is journalled and revertible from the UI.
+- [x] Bulk cluster labelling applies to every member.
+- [x] Full keyboard operation with no mouse.
+- [x] Re-running attribution after corrections is offered and works.

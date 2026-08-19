@@ -2,7 +2,7 @@
 id: P3-03
 phase: 3
 title: Combat encounter reconstruction
-status: in_progress
+status: done
 assignee: "luna-p3-03"
 depends_on: [P3-02]
 scope:
@@ -11,7 +11,7 @@ scope:
   - packages/core/src/contracts/events.ts
   - packages/core/src/index.ts
 estimate: L
-commit: ""
+commit: "58fc67d"
 ---
 
 ## Why
@@ -30,9 +30,9 @@ Combat is the most mechanically legible part of a session and the part players m
 
 ## Acceptance
 
-- [ ] Round boundaries match the fixture's turn-order cycles.
-- [ ] Every roll inside a combat beat is assigned to a turn or explicitly listed as unassigned with a reason.
-- [ ] Advantage and disadvantage survive from the parser into the encounter record.
-- [ ] Turn narration attaches to the correct turn.
-- [ ] No HP or death outcome is stated without a roll or explicit speech supporting it.
-- [ ] The trackerless fallback reconstructs an encounter and marks it inferred.
+- [x] Round boundaries match the fixture's turn-order cycles.
+- [x] Every roll inside a combat beat is assigned to a turn or explicitly listed as unassigned with a reason.
+- [x] Advantage and disadvantage survive from the parser into the encounter record.
+- [x] Turn narration attaches to the correct turn.
+- [x] No HP or death outcome is stated without a roll or explicit speech supporting it.
+- [x] The trackerless fallback reconstructs an encounter and marks it inferred.

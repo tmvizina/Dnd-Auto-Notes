@@ -4,13 +4,17 @@ The living state of the build. The orchestrator appends to this after every inte
 
 ## Current state
 
-**Phase 0 is complete** and **phase 1 is over half done.** `P0-01`, `P0-02`, `P0-04`, `P0-05` and `P0-06` are done; `P0-03` (CI) is written and locally verified but **blocked** — its acceptance is a green CI run, which needs a push.
+**38 of 52 tickets are done.** Phases 0 and 1 are complete apart from `P0-03` (CI), which is written and locally verified but **blocked** on a push. Phase 2 is complete except `P2-11`; phase 3 is done through `P3-04`; phase 4 is done except `P4-07`, `P4-09` and `P4-10`.
 
-In phase 1, `P1-01` through `P1-09` are done. `P1-10` (intake QA report) is now ready.
+The repo builds, typechecks, tests, lints and formats clean: **548 TypeScript tests across 67 files, 70 Python tests**, `npm run tickets -- --check` green across all 52 tickets.
 
-In phase 4, `P4-01` through `P4-04` are done: the secure Electron shell, validated IPC boundary, React renderer shell and demand-driven sidecar supervision are in place. `P4-05` is now ready.
+### Read this before trusting a `done` marker
 
-The committed repo builds, typechecks, tests and lints clean: 375 TypeScript tests and 40 Python tests after P4-03; `npm run tickets -- --check` is green across all 52 tickets.
+The Codex/Luna run that carried the build from `P1-10` to `P3-04` **stopped running the full suite before closing tickets**. It did not hide this — three checkpoint rows below say in as many words that a host `EPERM` on the Vitest temp directory prevented the final rerun — but the tickets were closed as `done` anyway, which the definition of done in `docs/orchestration.md` does not allow.
+
+The cost was real. `P3-02` and `P2-12` were both closed with their own tests failing; that was confirmed by checking their closeout commits out into a worktree and running them there, not inferred. Worse, `a3eb351` ("In progress luna work") committed an `index.ts` exporting `./outline/encounter.js` and a `main.ts` importing `./handlers/review.js` while **both of those files were still untracked**, and that commit was pushed. For a while `origin/main` could not build from a clean checkout at all.
+
+All of it is repaired as of `HEAD`, and the untracked work is committed as its own tickets. The lesson for whoever runs the next session: `--ready` and the suite are the ground truth, and a ticket is not closed until both have actually been run.
 
 In place:
 
@@ -82,6 +86,11 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 | `6111324` | `P3-01` | Deterministic unified session event model, traversal API and outline stage | Independent review passed collision-checked stable ids, strict ordering, source-reference validation, linked roll announcements with retained evidence, gaps, chat, combat and turn-order events, derived display fields and atomic schema-validated persistence. Workspace typecheck, scoped lint and format passed; focused tests were authored for model and stage behavior but rerunning them in the final orchestration process was blocked by the host temporary-directory EPERM condition. |
 | `6ca469c` | `P3-02` | Explainable deterministic beat segmentation and persisted beat metrics | Independent review returned transition-only combat beats, conflated classification/boundary accuracy and ineffective partition guards. It passed after combat intervals retained enclosed roll evidence, metrics were separated, and duplicate/missing event and source partitions became runtime errors. Core typecheck, scoped lint and format passed; the host Vitest temp-directory EPERM prevented the final focused rerun. |
 | `eebbb3e` | `P2-12` | Interactive labeling, recoverable publication, real calibration and profile seeding | Five review rounds replaced placeholder metrics and test-only labeling with transcript-backed human choices, exact bounded playback, durable dual-label recovery, proportional sampling, regularized held-out fitting, immutable version activation and training-only profile seeding. Core/CLI typecheck, scoped lint and format passed; the host Vitest temp-directory EPERM prevented the final focused rerun. |
+| `58fc67d` | `P3-03` | Combat encounter reconstruction | Landed from uncommitted work. Round cycling compared tracker names against character ids, so every fight collapsed into one round; detection now keys on the initiative order's own names and treats a repeat action as the wrap, which survives insertions, removals and delays. The trackerless path reconstructs instead of throwing. 8 tests. |
+| `c9edd1e` | `P3-04` | Skill checks and social scenes | Landed from uncommitted work. Verdict patterns missed the bare "succeed"; social outcome tested agreement before refusal, so "refuses the deal" read as an agreement. 5 tests. |
+| `0ea046b` | `P3-02` | Beat minimum enforced on spans | Repair. The minimum was applied to boundary _spacing_, so instantaneous markers produced zero-length beats and a combat beat that excluded its own attack roll. 7 tests, including the two that were failing at `6ca469c`. |
+| `1a534e0` | `P2-12` | Calibration sweep and docs append | Repair. The sweep measured winning-class probability, which for k one-vs-rest models never falls below 1/k — two of its three rows could not flag anything for any input. Now measures margin, cut by rank. `calibrate` also exited 2 on a fresh campaign because the docs recovery created the file but not its directory. 16 tests. |
+| `e0d8fbb` | `P4-08` | Flagged-span review page | Landed from uncommitted work. The handler arrived well covered; the page had one test and a keyboard layer that bound "p" to _previous_, duplicating ArrowLeft and leaving play on the space bar alone. Bindings extracted to a pure function and tested. 8 page tests. |
 
 ## Known risks
 
@@ -90,22 +99,23 @@ Not yet decided, deliberately deferred to the tickets that carry the evidence:
 3. **Craig track alignment is assumed, not guaranteed.** `P1-03` now verifies it against the median duration and sets `aligned: false` per track, with `TRACK_DURATION_MISMATCH` naming the outliers. The check is proven against a synthetic outlier only; whether real Craig downloads ever violate the shared t=0 is still unknown until `P5-01`.
 4. **Mic bleed from co-located players** would silently double every line. `P2-03` detects it; it has not been tested against a real co-located table.
 5. **Nothing is validated against real audio yet.** `P5-01` is the first contact with reality, and its findings will generate follow-up tickets.
+6. **Tests that `mkdtemp` inside the repo.** Several suites create scratch roots such as `.p2-12-clock-…` in `process.cwd()` rather than the system temp directory, which is what the earlier `EPERM` was worked around with. They are gitignored, but the pattern leaves debris when a run dies partway and it hides real permission problems. Worth normalising the next time a ticket touches those files.
 
 ## Exact next actions
 
-`P3-02` is fully closed; `P2-12` and `P4-08` remain in correction review. The ticket tool now reports five other ready tickets:
+Nothing is in flight. Three tickets are ready:
 
-1. **`P2-11`** - audio-native adjudicator; no model download or paid call is authorized.
-2. **`P3-03`** - combat encounter reconstruction.
-3. **`P3-04`** - skill checks and social scenes.
-4. **`P3-05`** - action description extraction.
-5. **`P4-07`** - Claude and Codex provider runner; tests must use fakes and must not run paid prompts.
+1. **`P3-05`** — action description extraction. The natural next step: `P3-01` through `P3-04` are done, and `P3-06` (notes renderer) is what turns all of it into output.
+2. **`P4-07`** — Claude and Codex provider runner; tests must use fakes and must not run paid prompts.
+3. **`P2-11`** — audio-native adjudicator; no model download or paid call is authorized.
 
 Assign from `npm run tickets -- --ready`; do not rely on this prose if ticket state changes.
 
 ### Decision waiting on you
 
-`P0-03` is blocked on a push. Nothing else depends on it, so phase 1 proceeds regardless.
+`P0-03` is blocked on a push, and `main` is well ahead of `origin`. Note that the push which already happened put a non-building tree on `origin/main`; the repair commits since then fix it, so pushing again is now safe and would also unblock `P0-03`.
+
+`tools/tickets.mjs` reduces a literal file path to its directory before testing scope overlap, so two tickets touching different files under `packages/core/src/` are reported as colliding. It is deliberately conservative, but it cries wolf on every pair of literal paths — `P3-03` and `P3-04` were flagged despite disjoint scopes. Worth making literal paths compare exactly.
 
 ## Environment notes
 
