@@ -1,6 +1,6 @@
 import type { Beat } from "../contracts/events.js";
 import { SessionEventTimeline } from "./events.js";
-import type { OutlineEvent } from "./events.js";
+import type { OutlineEvent, OutlineEventKind } from "./events.js";
 
 export const BEAT_GAP_S = 8;
 export const MIN_BEAT_DURATION_S = 30;
@@ -288,6 +288,52 @@ function peakPick(
   return selected;
 }
 
+/**
+ * Markers that open a scene rather than close one. A zero-length `combat_start`
+ * belongs to the fight that follows it, not to the lull before it.
+ */
+const OPENING_MARKERS = new Set<OutlineEventKind>(["session_start", "combat_start"]);
+
+/**
+ * `peakPick` spaces *boundaries* at least `minimum` apart, which is not the
+ * same thing as every beat lasting that long: `combat_start`, `combat_end` and
+ * `session_start` are instantaneous, so a boundary on either side of one
+ * leaves a beat of zero duration. Those show up in the notes as a heading with
+ * nothing under it.
+ *
+ * So the spans are checked after the fact and short ones absorbed into a
+ * neighbour — forwards for an opening marker, backwards otherwise, so a
+ * transition always lands in the scene it belongs to.
+ */
+function enforceMinimumSpan(
+  events: readonly OutlineEvent[],
+  indexes: readonly number[],
+  minimum: number,
+): readonly number[] {
+  const kept = [...indexes];
+  // Each pass removes one boundary, and there are finitely many, so this
+  // terminates; the loop restarts because a merge changes its neighbours.
+  for (let guard = 0; guard < indexes.length + 1; guard += 1) {
+    if (kept.length <= 2) break;
+    let merged = false;
+    for (let position = 0; position < kept.length - 1; position += 1) {
+      const members = events.slice(kept[position]!, kept[position + 1]!);
+      if (members.length === 0) continue;
+      const span = members.at(-1)!.t_end_s - members[0]!.t_start_s;
+      if (span >= minimum) continue;
+
+      const opensScene = OPENING_MARKERS.has(members[0]!.kind);
+      // The first segment has nothing behind it, so it can only merge forward.
+      const forward = opensScene || position === 0;
+      kept.splice(forward ? position + 1 : position, 1);
+      merged = true;
+      break;
+    }
+    if (!merged) break;
+  }
+  return kept;
+}
+
 function classify(events: readonly OutlineEvent[]): BeatKind {
   const speech = events.filter((event) => event.kind === "speech");
   const textValue = events.map(text).join(" ").toLocaleLowerCase();
@@ -391,7 +437,7 @@ export function segmentBeats(input: BeatSegmentationInput): BeatSegmentationResu
   const minimum = input.config?.min_duration_s ?? MIN_BEAT_DURATION_S;
   finite(minimum, "min_duration_s");
   const candidates = scoreBeatBoundaries({ ...input, events });
-  const indexes = peakPick(events, candidates, minimum);
+  const indexes = enforceMinimumSpan(events, peakPick(events, candidates, minimum), minimum);
   const byIndex = new Map(candidates.map((candidate) => [candidate.event_index, candidate]));
   const beats: SegmentedBeat[] = [];
   const titleCounts = new Map<string, number>();
