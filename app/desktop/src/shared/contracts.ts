@@ -77,6 +77,23 @@ interface PlainRecord {
   readonly bytesCopied?: unknown;
   readonly totalBytes?: unknown;
   readonly fraction?: unknown;
+  readonly action?: unknown;
+  readonly utteranceId?: unknown;
+  readonly label?: unknown;
+  readonly characterId?: unknown;
+  readonly clusterId?: unknown;
+  readonly journalId?: unknown;
+  readonly utteranceIds?: unknown;
+  readonly flags?: unknown;
+  readonly impactS?: unknown;
+  readonly timestampS?: unknown;
+  readonly speaker?: unknown;
+  readonly text?: unknown;
+  readonly evidence?: unknown;
+  readonly rerunSuggested?: unknown;
+  readonly count?: unknown;
+  readonly reverted?: unknown;
+  readonly path?: unknown;
 }
 
 const isRecord = (value: unknown): value is PlainRecord =>
@@ -98,6 +115,14 @@ const CHANNEL_VALUES = {
     reveal: "dnd/sessions/reveal",
     qa: "dnd/sessions/qa",
     mapping: "dnd/sessions/mapping",
+  },
+  review: {
+    list: "dnd/review/list",
+    resolve: "dnd/review/resolve",
+    bulk: "dnd/review/bulk",
+    revert: "dnd/review/revert",
+    rerun: "dnd/review/rerun",
+    clip: "dnd/review/clip",
   },
   pipeline: {
     run: "dnd/pipeline/run",
@@ -525,6 +550,75 @@ export interface SessionsMappingResponse {
   readonly saved: boolean;
 }
 
+export interface ReviewCandidate {
+  readonly label: string;
+  readonly characterId: string | null;
+  readonly score: number;
+}
+export interface ReviewFlag {
+  readonly utteranceId: string;
+  readonly code: string;
+  readonly impactS: number;
+  readonly timestampS: number;
+  readonly speaker: string;
+  readonly text: string;
+  readonly candidates: readonly ReviewCandidate[];
+  readonly evidence: Readonly<Record<string, unknown>>;
+  readonly clusterId: string | null;
+}
+export interface ReviewListRequest {
+  readonly sessionId: string;
+}
+export interface ReviewListResponse {
+  readonly flags: readonly ReviewFlag[];
+}
+export type ReviewAction = "candidate" | "character" | "out_of_character" | "unresolvable";
+export interface ReviewResolveRequest {
+  readonly sessionId: string;
+  readonly utteranceId: string;
+  readonly action: ReviewAction;
+  readonly label?: string;
+  readonly characterId?: string | null;
+}
+export interface ReviewResolveResponse {
+  readonly saved: boolean;
+  readonly rerunSuggested: boolean;
+  readonly journalId?: string;
+}
+export interface ReviewBulkRequest {
+  readonly sessionId: string;
+  readonly clusterId: string;
+  readonly action: ReviewAction;
+  readonly label?: string;
+  readonly characterId?: string | null;
+}
+export interface ReviewBulkResponse {
+  readonly saved: boolean;
+  readonly count: number;
+  readonly rerunSuggested: boolean;
+}
+export interface ReviewRevertRequest {
+  readonly sessionId: string;
+  readonly journalId: string;
+}
+export interface ReviewRevertResponse {
+  readonly reverted: boolean;
+}
+export interface ReviewRerunRequest {
+  readonly sessionId: string;
+  readonly utteranceIds: readonly string[];
+}
+export interface ReviewRerunResponse {
+  readonly runId: string;
+}
+export interface ReviewClipRequest {
+  readonly sessionId: string;
+  readonly utteranceId: string;
+}
+export interface ReviewClipResponse {
+  readonly path: string;
+}
+
 export interface PipelineRunRequest {
   readonly sessionId: string;
   readonly stages?: readonly string[];
@@ -741,6 +835,12 @@ export interface IpcRequestMap {
   sessionsReveal: SessionsRevealRequest;
   sessionsQa: SessionsQaRequest;
   sessionsMapping: SessionsMappingRequest;
+  reviewList: ReviewListRequest;
+  reviewResolve: ReviewResolveRequest;
+  reviewBulk: ReviewBulkRequest;
+  reviewRevert: ReviewRevertRequest;
+  reviewRerun: ReviewRerunRequest;
+  reviewClip: ReviewClipRequest;
   pipelineRun: PipelineRunRequest;
   pipelineCancel: PipelineCancelRequest;
   runsSubscribe: RunsSubscribeRequest;
@@ -761,6 +861,12 @@ export interface IpcResponseMap {
   sessionsReveal: SessionsRevealResponse;
   sessionsQa: SessionsQaResponse;
   sessionsMapping: SessionsMappingResponse;
+  reviewList: ReviewListResponse;
+  reviewResolve: ReviewResolveResponse;
+  reviewBulk: ReviewBulkResponse;
+  reviewRevert: ReviewRevertResponse;
+  reviewRerun: ReviewRerunResponse;
+  reviewClip: ReviewClipResponse;
   pipelineRun: PipelineRunResponse;
   pipelineCancel: PipelineCancelResponse;
   runsSubscribe: RunsSubscribeResponse;
@@ -785,6 +891,12 @@ const operationForChannel = new Map<string, IpcOperation>([
   [CHANNELS.sessions.reveal, "sessionsReveal"],
   [CHANNELS.sessions.qa, "sessionsQa"],
   [CHANNELS.sessions.mapping, "sessionsMapping"],
+  [CHANNELS.review.list, "reviewList"],
+  [CHANNELS.review.resolve, "reviewResolve"],
+  [CHANNELS.review.bulk, "reviewBulk"],
+  [CHANNELS.review.revert, "reviewRevert"],
+  [CHANNELS.review.rerun, "reviewRerun"],
+  [CHANNELS.review.clip, "reviewClip"],
   [CHANNELS.pipeline.run, "pipelineRun"],
   [CHANNELS.pipeline.cancel, "pipelineCancel"],
   [CHANNELS.runs.subscribe, "runsSubscribe"],
@@ -1147,6 +1259,89 @@ function parseRequestForOperation(operation: IpcOperation, value: unknown): IpcR
       const record = parseObject(value, ["sessionId"], "sessions.qa request");
       return { sessionId: sessionId(record.sessionId) };
     }
+    case "reviewList":
+      return {
+        sessionId: sessionId(parseObject(value, ["sessionId"], "review.list request").sessionId),
+      };
+    case "reviewResolve": {
+      const record = parseObject(
+        value,
+        ["sessionId", "utteranceId", "action", "label", "characterId"],
+        "review.resolve request",
+      );
+      if (
+        !["candidate", "character", "out_of_character", "unresolvable"].includes(
+          String(record.action),
+        )
+      )
+        throw invalid(ERROR_CODES.invalidValue, "invalid review action");
+      return {
+        sessionId: sessionId(record.sessionId),
+        utteranceId: requiredString(record.utteranceId, "utteranceId"),
+        action: record.action as ReviewAction,
+        ...(record.label === undefined ? {} : { label: requiredString(record.label, "label") }),
+        ...(record.characterId === undefined
+          ? {}
+          : {
+              characterId:
+                record.characterId === null
+                  ? null
+                  : requiredString(record.characterId, "characterId"),
+            }),
+      };
+    }
+    case "reviewBulk": {
+      const record = parseObject(
+        value,
+        ["sessionId", "clusterId", "action", "label", "characterId"],
+        "review.bulk request",
+      );
+      if (
+        !["candidate", "character", "out_of_character", "unresolvable"].includes(
+          String(record.action),
+        )
+      )
+        throw invalid(ERROR_CODES.invalidValue, "invalid review action");
+      return {
+        sessionId: sessionId(record.sessionId),
+        clusterId: requiredString(record.clusterId, "clusterId"),
+        action: record.action as ReviewAction,
+        ...(record.label === undefined ? {} : { label: requiredString(record.label, "label") }),
+        ...(record.characterId === undefined
+          ? {}
+          : {
+              characterId:
+                record.characterId === null
+                  ? null
+                  : requiredString(record.characterId, "characterId"),
+            }),
+      };
+    }
+    case "reviewRevert": {
+      const record = parseObject(value, ["sessionId", "journalId"], "review.revert request");
+      return {
+        sessionId: sessionId(record.sessionId),
+        journalId: requiredString(record.journalId, "journalId"),
+      };
+    }
+    case "reviewRerun": {
+      const record = parseObject(value, ["sessionId", "utteranceIds"], "review.rerun request");
+      if (!Array.isArray(record.utteranceIds) || record.utteranceIds.length > 1_000)
+        throw invalid(ERROR_CODES.invalidValue, "utteranceIds must be a bounded array");
+      return {
+        sessionId: sessionId(record.sessionId),
+        utteranceIds: record.utteranceIds.map((id, index) =>
+          requiredString(id, `utteranceIds[${String(index)}]`),
+        ),
+      };
+    }
+    case "reviewClip": {
+      const record = parseObject(value, ["sessionId", "utteranceId"], "review.clip request");
+      return {
+        sessionId: sessionId(record.sessionId),
+        utteranceId: requiredString(record.utteranceId, "utteranceId"),
+      };
+    }
     case "sessionsMapping": {
       const record = parseObject(value, ["sessionId", "decisions"], "sessions.mapping request");
       if (!Array.isArray(record.decisions) || record.decisions.length > 1_000)
@@ -1286,6 +1481,55 @@ export function validateRequestEnvelope(channel: string, value: unknown): IpcReq
   return validateRequest(channel, value.value);
 }
 
+function parseReviewFlag(value: unknown, context: string): ReviewFlag {
+  const record = parseObject(
+    value,
+    [
+      "utteranceId",
+      "code",
+      "impactS",
+      "timestampS",
+      "speaker",
+      "text",
+      "candidates",
+      "evidence",
+      "clusterId",
+    ],
+    context,
+  );
+  if (!Array.isArray(record.candidates))
+    throw invalid(ERROR_CODES.invalidValue, `${context}.candidates must be an array`);
+  const candidates = record.candidates.map((item, index) => {
+    const candidate = parseObject(
+      item,
+      ["label", "characterId", "score"],
+      `${context}.candidates[${String(index)}]`,
+    );
+    return {
+      label: requiredString(candidate.label, "label"),
+      characterId:
+        candidate.characterId === null
+          ? null
+          : requiredString(candidate.characterId, "characterId"),
+      score:
+        typeof candidate.score === "number" && Number.isFinite(candidate.score)
+          ? candidate.score
+          : 0,
+    };
+  });
+  return {
+    utteranceId: requiredString(record.utteranceId, "utteranceId"),
+    code: requiredString(record.code, "code"),
+    impactS: typeof record.impactS === "number" ? record.impactS : 0,
+    timestampS: typeof record.timestampS === "number" ? record.timestampS : 0,
+    speaker: requiredString(record.speaker, "speaker"),
+    text: requiredString(record.text, "text"),
+    candidates,
+    evidence: isRecord(record.evidence) ? record.evidence : {},
+    clusterId: record.clusterId === null ? null : requiredString(record.clusterId, "clusterId"),
+  };
+}
+
 function parseResponseForOperation(operation: IpcOperation, value: unknown): IpcResponse {
   switch (operation) {
     case "sessionsList": {
@@ -1307,6 +1551,52 @@ function parseResponseForOperation(operation: IpcOperation, value: unknown): Ipc
         session: record.session === null ? null : parseSessionSummary(record.session, "session"),
         ...(record.paths === undefined ? {} : { paths: parseDropPaths(record.paths, "paths") }),
       };
+    }
+    case "reviewList": {
+      const record = parseObject(value, ["flags"], "review.list response");
+      if (!Array.isArray(record.flags))
+        throw invalid(ERROR_CODES.invalidValue, "flags must be an array");
+      return {
+        flags: record.flags.map((item, index) => parseReviewFlag(item, `flags[${String(index)}]`)),
+      };
+    }
+    case "reviewResolve": {
+      const record = parseObject(
+        value,
+        ["saved", "rerunSuggested", "journalId"],
+        "review.resolve response",
+      );
+      return {
+        saved: record.saved === true,
+        rerunSuggested: record.rerunSuggested === true,
+        ...(record.journalId === undefined
+          ? {}
+          : { journalId: requiredString(record.journalId, "journalId") }),
+      };
+    }
+    case "reviewBulk": {
+      const record = parseObject(
+        value,
+        ["saved", "count", "rerunSuggested"],
+        "review.bulk response",
+      );
+      return {
+        saved: record.saved === true,
+        count: requiredInteger(record.count, "count"),
+        rerunSuggested: record.rerunSuggested === true,
+      };
+    }
+    case "reviewRevert": {
+      const record = parseObject(value, ["reverted"], "review.revert response");
+      return { reverted: record.reverted === true };
+    }
+    case "reviewRerun": {
+      const record = parseObject(value, ["runId"], "review.rerun response");
+      return { runId: runId(record.runId) };
+    }
+    case "reviewClip": {
+      const record = parseObject(value, ["path"], "review.clip response");
+      return { path: requiredString(record.path, "path", IPC_LIMITS.maxStringLength) };
     }
     case "sessionsCreate": {
       const record = parseObject(value, ["session", "paths"], "sessions.create response");

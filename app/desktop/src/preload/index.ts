@@ -35,6 +35,18 @@ import {
   type SessionsQaResponse,
   type SessionsRevealRequest,
   type SessionsRevealResponse,
+  type ReviewListRequest,
+  type ReviewListResponse,
+  type ReviewResolveRequest,
+  type ReviewResolveResponse,
+  type ReviewBulkRequest,
+  type ReviewBulkResponse,
+  type ReviewRevertRequest,
+  type ReviewRevertResponse,
+  type ReviewRerunRequest,
+  type ReviewRerunResponse,
+  type ReviewClipRequest,
+  type ReviewClipResponse,
   type SettingsSetRequest,
   type SettingsSetResponse,
   type SettingsGetResponse,
@@ -73,6 +85,16 @@ export interface DesktopBridge {
     readonly mapping: (
       request: SessionsMappingRequest,
     ) => Promise<IpcEnvelope<SessionsMappingResponse>>;
+  };
+  readonly review: {
+    readonly list: (request: ReviewListRequest) => Promise<IpcEnvelope<ReviewListResponse>>;
+    readonly resolve: (
+      request: ReviewResolveRequest,
+    ) => Promise<IpcEnvelope<ReviewResolveResponse>>;
+    readonly bulk: (request: ReviewBulkRequest) => Promise<IpcEnvelope<ReviewBulkResponse>>;
+    readonly revert: (request: ReviewRevertRequest) => Promise<IpcEnvelope<ReviewRevertResponse>>;
+    readonly rerun: (request: ReviewRerunRequest) => Promise<IpcEnvelope<ReviewRerunResponse>>;
+    readonly clip: (request: ReviewClipRequest) => Promise<IpcEnvelope<ReviewClipResponse>>;
   };
   readonly pipeline: {
     readonly run: (request: PipelineRunRequest) => Promise<IpcEnvelope<PipelineRunResponse>>;
@@ -143,6 +165,7 @@ function invoke<TRequest, TResponse>(
 
 function freezeBridge(bridge: DesktopBridge): DesktopBridge {
   Object.freeze(bridge.sessions);
+  Object.freeze(bridge.review);
   Object.freeze(bridge.pipeline);
   Object.freeze(bridge.runs);
   Object.freeze(bridge.settings);
@@ -188,6 +211,14 @@ export function buildBridge(renderer: IpcRendererLike): DesktopBridge {
           CHANNELS.sessions.mapping,
           request,
         ),
+    },
+    review: {
+      list: (request) => invoke(renderer, CHANNELS.review.list, request),
+      resolve: (request) => invoke(renderer, CHANNELS.review.resolve, request),
+      bulk: (request) => invoke(renderer, CHANNELS.review.bulk, request),
+      revert: (request) => invoke(renderer, CHANNELS.review.revert, request),
+      rerun: (request) => invoke(renderer, CHANNELS.review.rerun, request),
+      clip: (request) => invoke(renderer, CHANNELS.review.clip, request),
     },
     pipeline: {
       run: (request) =>

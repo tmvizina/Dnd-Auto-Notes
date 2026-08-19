@@ -624,3 +624,37 @@ p {
     transition-duration: 0.01ms !important;
   }
 }
+.review-card {
+  display: grid;
+  gap: 1rem;
+  max-width: 58rem;
+}
+.review-card__header,
+.review-nav,
+.review-actions,
+.review-candidates,
+.review-offer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+.review-card__header {
+  justify-content: space-between;
+}
+.review-time,
+.review-text {
+  margin: 0;
+}
+.review-text {
+  font-size: 1.15rem;
+  line-height: 1.55;
+}
+.review-offer {
+  padding: 1rem;
+  border: 1px solid var(--border, #c9c9c9);
+  border-radius: 0.5rem;
+}
+.clip-player audio {
+  display: none;
+}

@@ -19,6 +19,8 @@ export type {
   SessionEvent as OutlineSessionEvent,
 } from "./outline/events.js";
 export * from "./stages/outline.js";
+export { buildEncounter, reconstructEncounter } from "./outline/encounter.js";
+export type { EncounterOptions } from "./outline/encounter.js";
 export * from "./persona/calibrate.js";
 export { readFeatureEmbedding } from "./stages/features.js";
 export {

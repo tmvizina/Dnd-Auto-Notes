@@ -24,6 +24,7 @@ describe("preload bridge", () => {
     expect(exposed).not.toHaveProperty("ipcRenderer");
     expect(Object.keys(exposed).sort()).toEqual([
       "pipeline",
+      "review",
       "runs",
       "sessions",
       "settings",

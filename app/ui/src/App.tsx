@@ -149,6 +149,7 @@ function pageForRoute(
   onRevealSettingPath: SettingsPageProps["onRevealPath"],
   onTestConnection: SettingsPageProps["onTestConnection"],
   onRerunAttribution: SettingsPageProps["onRerun"],
+  transport: RendererTransport,
   onCreate?: (draft: SessionDraft) => Promise<SessionScaffold>,
   onRevealPath?: (path: string) => Promise<void> | void,
   onCopyPath?: (path: string) => Promise<void> | void,
@@ -168,7 +169,7 @@ function pageForRoute(
         />
       );
     case "review":
-      return <ReviewPage hasSession={selectedSession !== null} />;
+      return <ReviewPage sessionId={selectedSession?.sessionId ?? null} transport={transport} />;
     case "notes":
       return <NotesPage hasSession={selectedSession !== null} />;
     case "settings":
@@ -654,6 +655,7 @@ export function App({
         revealSettingPath,
         testSettingsConnection,
         rerunAttribution,
+        transport,
         createSession,
         revealPath,
       )

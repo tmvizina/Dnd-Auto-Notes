@@ -57,21 +57,53 @@ export type SessionEvent = z.infer<typeof SessionEvent>;
 export const Turn = z.object({
   actor: CharacterRef.nullable(),
   roll_ids: z.array(RollId).default([]),
+  roll_evidence: z
+    .array(
+      z.object({
+        roll_id: RollId,
+        seq: z.number().int().nonnegative(),
+        who: z.string(),
+        player_id: z.string().nullable(),
+        formula: z.string(),
+        modifiers: z.number(),
+        kind: z.string(),
+        advantage: z.enum(["none", "advantage", "disadvantage"]),
+        total: z.number(),
+        target: z.string().nullable().default(null),
+        raw_ref: z.string().optional(),
+        dice: z
+          .array(z.object({ sides: z.number(), value: z.number(), dropped: z.boolean() }))
+          .default([]),
+        critical: z.boolean().default(false),
+      }),
+    )
+    .default([]),
   narration_utterances: z.array(UtteranceId).default([]),
   damage_total: z.number().nullable().default(null),
 });
+export type Turn = z.infer<typeof Turn>;
 
 export const Round = z.object({
   n: z.number().int().positive(),
   turns: z.array(Turn),
 });
+export type Round = z.infer<typeof Round>;
 
 export const Encounter = z.object({
   rounds: z.array(Round),
   participants: z.array(CharacterRef).default([]),
   /** `inferred` when the turn-order tracker was absent and rolls stood in. */
   reconstruction: z.enum(["tracker", "inferred"]),
+  reconstruction_evidence: z.array(NonEmpty).default([]),
   notable_roll_ids: z.array(RollId).default([]),
+  unassigned_rolls: z.array(z.object({ roll_id: RollId, reason: NonEmpty })).default([]),
+  damage_by_actor: z.record(z.string(), z.number()).default({}),
+  damage_by_target: z.record(z.string(), z.number()).default({}),
+  summary: z.object({
+    rounds: z.number().int().nonnegative(),
+    total_damage: z.number().nonnegative(),
+    notable_count: z.number().int().nonnegative(),
+  }),
 });
 export type Encounter = z.infer<typeof Encounter>;
 

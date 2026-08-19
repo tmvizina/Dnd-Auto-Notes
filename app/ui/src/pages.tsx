@@ -22,26 +22,8 @@ export { decisionsForSuggestions, isMappingCode, orderQaEntries } from "./pages/
 export { SettingsPage } from "./pages/Settings.js";
 export type { SettingsCapabilities, SettingsPageProps } from "./pages/Settings.js";
 
-export function ReviewPage({ hasSession }: { readonly hasSession: boolean }): ReactNode {
-  return (
-    <div className="page-content">
-      <PageIntro
-        description="Resolve uncertain speakers and keep every attribution decision explainable."
-        kicker="Quality"
-        title="Review"
-      />
-      <StatePanel
-        kind="empty"
-        message={
-          hasSession
-            ? "This session has no flagged lines waiting for review."
-            : "Choose a session first; review items will appear here when processing finds uncertainty."
-        }
-        title={hasSession ? "Nothing needs review" : "No session selected"}
-      />
-    </div>
-  );
-}
+export { ReviewPage } from "./pages/Review.js";
+export type { ReviewPageProps } from "./pages/Review.js";
 
 export function NotesPage({ hasSession }: { readonly hasSession: boolean }): ReactNode {
   return (

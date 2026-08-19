@@ -40,6 +40,18 @@ import {
   type SessionsQaResponse,
   type SessionsRevealRequest,
   type SessionsRevealResponse,
+  type ReviewListRequest,
+  type ReviewListResponse,
+  type ReviewResolveRequest,
+  type ReviewResolveResponse,
+  type ReviewBulkRequest,
+  type ReviewBulkResponse,
+  type ReviewRevertRequest,
+  type ReviewRevertResponse,
+  type ReviewRerunRequest,
+  type ReviewRerunResponse,
+  type ReviewClipRequest,
+  type ReviewClipResponse,
   type SettingsSetRequest,
   type SettingsSetResponse,
   type SettingsGetResponse,
@@ -108,6 +120,30 @@ export interface IpcHandlerMap {
     request: SessionsMappingRequest,
     context: IpcHandlerContext,
   ) => SessionsMappingResponse | Promise<SessionsMappingResponse>;
+  reviewList?: (
+    request: ReviewListRequest,
+    context: IpcHandlerContext,
+  ) => ReviewListResponse | Promise<ReviewListResponse>;
+  reviewResolve?: (
+    request: ReviewResolveRequest,
+    context: IpcHandlerContext,
+  ) => ReviewResolveResponse | Promise<ReviewResolveResponse>;
+  reviewBulk?: (
+    request: ReviewBulkRequest,
+    context: IpcHandlerContext,
+  ) => ReviewBulkResponse | Promise<ReviewBulkResponse>;
+  reviewRevert?: (
+    request: ReviewRevertRequest,
+    context: IpcHandlerContext,
+  ) => ReviewRevertResponse | Promise<ReviewRevertResponse>;
+  reviewRerun?: (
+    request: ReviewRerunRequest,
+    context: IpcHandlerContext,
+  ) => ReviewRerunResponse | Promise<ReviewRerunResponse>;
+  reviewClip?: (
+    request: ReviewClipRequest,
+    context: IpcHandlerContext,
+  ) => ReviewClipResponse | Promise<ReviewClipResponse>;
   pipelineRun?: (
     request: PipelineRunRequest,
     context: IpcHandlerContext,
@@ -301,6 +337,30 @@ async function dispatch(
       return handlers.sessionsMapping === undefined
         ? handlerUnavailable()
         : handlers.sessionsMapping(request as SessionsMappingRequest, context);
+    case "reviewList":
+      return handlers.reviewList === undefined
+        ? handlerUnavailable()
+        : handlers.reviewList(request as ReviewListRequest, context);
+    case "reviewResolve":
+      return handlers.reviewResolve === undefined
+        ? handlerUnavailable()
+        : handlers.reviewResolve(request as ReviewResolveRequest, context);
+    case "reviewBulk":
+      return handlers.reviewBulk === undefined
+        ? handlerUnavailable()
+        : handlers.reviewBulk(request as ReviewBulkRequest, context);
+    case "reviewRevert":
+      return handlers.reviewRevert === undefined
+        ? handlerUnavailable()
+        : handlers.reviewRevert(request as ReviewRevertRequest, context);
+    case "reviewRerun":
+      return handlers.reviewRerun === undefined
+        ? handlerUnavailable()
+        : handlers.reviewRerun(request as ReviewRerunRequest, context);
+    case "reviewClip":
+      return handlers.reviewClip === undefined
+        ? handlerUnavailable()
+        : handlers.reviewClip(request as ReviewClipRequest, context);
     case "pipelineRun":
       return handlers.pipelineRun === undefined
         ? handlerUnavailable()
@@ -352,6 +412,12 @@ const CHANNEL_OPERATIONS: ReadonlyArray<readonly [string, keyof IpcHandlerMap]> 
   [CHANNELS.sessions.reveal, "sessionsReveal"],
   [CHANNELS.sessions.qa, "sessionsQa"],
   [CHANNELS.sessions.mapping, "sessionsMapping"],
+  [CHANNELS.review.list, "reviewList"],
+  [CHANNELS.review.resolve, "reviewResolve"],
+  [CHANNELS.review.bulk, "reviewBulk"],
+  [CHANNELS.review.revert, "reviewRevert"],
+  [CHANNELS.review.rerun, "reviewRerun"],
+  [CHANNELS.review.clip, "reviewClip"],
   [CHANNELS.pipeline.run, "pipelineRun"],
   [CHANNELS.pipeline.cancel, "pipelineCancel"],
   [CHANNELS.runs.subscribe, "runsSubscribe"],

@@ -41,6 +41,19 @@ import type {
   SidecarStatusEvent,
   SidecarStatusResponse,
   StructuredError,
+  ReviewFlag,
+  ReviewListRequest,
+  ReviewListResponse,
+  ReviewResolveRequest,
+  ReviewResolveResponse,
+  ReviewBulkRequest,
+  ReviewBulkResponse,
+  ReviewRevertRequest,
+  ReviewRevertResponse,
+  ReviewRerunRequest,
+  ReviewRerunResponse,
+  ReviewClipRequest,
+  ReviewClipResponse,
 } from "../../desktop/src/shared/contracts.js";
 
 export type {
@@ -52,6 +65,19 @@ export type {
   SessionDropPaths,
   SessionSummary,
   SidecarStatusEvent,
+  ReviewFlag,
+  ReviewListRequest,
+  ReviewListResponse,
+  ReviewResolveRequest,
+  ReviewResolveResponse,
+  ReviewBulkRequest,
+  ReviewBulkResponse,
+  ReviewRevertRequest,
+  ReviewRevertResponse,
+  ReviewRerunRequest,
+  ReviewRerunResponse,
+  ReviewClipRequest,
+  ReviewClipResponse,
 };
 export type SidecarStatus = Pick<SidecarStatusEvent, "status" | "reason" | "setupCommand">;
 
@@ -74,7 +100,13 @@ export type TransportOperation =
   | "settings.reveal"
   | "settings.testConnection"
   | "sidecar.status"
-  | "sidecar.logs";
+  | "sidecar.logs"
+  | "review.list"
+  | "review.resolve"
+  | "review.bulk"
+  | "review.revert"
+  | "review.rerun"
+  | "review.clip";
 
 export type Unsubscribe = () => void;
 export type TransportEventListener = (event: DesktopEvent) => void;
@@ -95,6 +127,16 @@ export interface DesktopBridgeLike {
     readonly mapping: (
       request: SessionsMappingRequest,
     ) => Promise<IpcEnvelope<SessionsMappingResponse>>;
+  };
+  readonly review: {
+    readonly list: (request: ReviewListRequest) => Promise<IpcEnvelope<ReviewListResponse>>;
+    readonly resolve: (
+      request: ReviewResolveRequest,
+    ) => Promise<IpcEnvelope<ReviewResolveResponse>>;
+    readonly bulk: (request: ReviewBulkRequest) => Promise<IpcEnvelope<ReviewBulkResponse>>;
+    readonly revert: (request: ReviewRevertRequest) => Promise<IpcEnvelope<ReviewRevertResponse>>;
+    readonly rerun: (request: ReviewRerunRequest) => Promise<IpcEnvelope<ReviewRerunResponse>>;
+    readonly clip: (request: ReviewClipRequest) => Promise<IpcEnvelope<ReviewClipResponse>>;
   };
   readonly pipeline: {
     readonly run: (request: PipelineRunRequest) => Promise<IpcEnvelope<PipelineRunResponse>>;
@@ -137,6 +179,14 @@ export interface RendererTransport {
     readonly reveal: (request: SessionsRevealRequest) => Promise<SessionsRevealResponse>;
     readonly qa: (request: SessionsQaRequest) => Promise<SessionsQaResponse>;
     readonly mapping: (request: SessionsMappingRequest) => Promise<SessionsMappingResponse>;
+  };
+  readonly review: {
+    readonly list: (request: ReviewListRequest) => Promise<ReviewListResponse>;
+    readonly resolve: (request: ReviewResolveRequest) => Promise<ReviewResolveResponse>;
+    readonly bulk: (request: ReviewBulkRequest) => Promise<ReviewBulkResponse>;
+    readonly revert: (request: ReviewRevertRequest) => Promise<ReviewRevertResponse>;
+    readonly rerun: (request: ReviewRerunRequest) => Promise<ReviewRerunResponse>;
+    readonly clip: (request: ReviewClipRequest) => Promise<ReviewClipResponse>;
   };
   readonly pipeline: {
     readonly run: (request: PipelineRunRequest) => Promise<PipelineRunResponse>;
@@ -206,12 +256,13 @@ function isFunction(value: unknown): value is (...args: never[]) => unknown {
 export function isDesktopBridge(value: unknown): value is DesktopBridgeLike {
   if (!isRecord(value)) return false;
   const sessions = value["sessions"];
+  const review = value["review"];
   const pipeline = value["pipeline"];
   const runs = value["runs"];
   const settings = value["settings"];
   const sidecar = value["sidecar"];
   if (!isRecord(sessions) || !isRecord(pipeline) || !isRecord(runs)) return false;
-  if (!isRecord(settings) || !isRecord(sidecar)) return false;
+  if (!isRecord(settings) || !isRecord(sidecar) || !isRecord(review)) return false;
   return (
     isFunction(sessions["list"]) &&
     isFunction(sessions["get"]) &&
@@ -220,6 +271,12 @@ export function isDesktopBridge(value: unknown): value is DesktopBridgeLike {
     isFunction(sessions["reveal"]) &&
     isFunction(sessions["qa"]) &&
     isFunction(sessions["mapping"]) &&
+    isFunction(review["list"]) &&
+    isFunction(review["resolve"]) &&
+    isFunction(review["bulk"]) &&
+    isFunction(review["revert"]) &&
+    isFunction(review["rerun"]) &&
+    isFunction(review["clip"]) &&
     isFunction(pipeline["run"]) &&
     isFunction(pipeline["cancel"]) &&
     isFunction(runs["subscribe"]) &&
@@ -261,6 +318,14 @@ function electronTransport(bridge: DesktopBridgeLike): RendererTransport {
       qa: (request) => unwrap("sessions.qa", () => bridge.sessions.qa(request)),
       mapping: (request) => unwrap("sessions.mapping", () => bridge.sessions.mapping(request)),
     },
+    review: {
+      list: (request) => unwrap("review.list", () => bridge.review.list(request)),
+      resolve: (request) => unwrap("review.resolve", () => bridge.review.resolve(request)),
+      bulk: (request) => unwrap("review.bulk", () => bridge.review.bulk(request)),
+      revert: (request) => unwrap("review.revert", () => bridge.review.revert(request)),
+      rerun: (request) => unwrap("review.rerun", () => bridge.review.rerun(request)),
+      clip: (request) => unwrap("review.clip", () => bridge.review.clip(request)),
+    },
     pipeline: {
       run: (request) => unwrap("pipeline.run", () => bridge.pipeline.run(request)),
       cancel: (request) => unwrap("pipeline.cancel", () => bridge.pipeline.cancel(request)),
@@ -298,6 +363,12 @@ function unavailableTransport(): RendererTransport {
   const reveal = unavailableCall<SessionsRevealResponse>("sessions.reveal");
   const qa = unavailableCall<SessionsQaResponse>("sessions.qa");
   const mapping = unavailableCall<SessionsMappingResponse>("sessions.mapping");
+  const reviewList = unavailableCall<ReviewListResponse>("review.list");
+  const reviewResolve = unavailableCall<ReviewResolveResponse>("review.resolve");
+  const reviewBulk = unavailableCall<ReviewBulkResponse>("review.bulk");
+  const reviewRevert = unavailableCall<ReviewRevertResponse>("review.revert");
+  const reviewRerun = unavailableCall<ReviewRerunResponse>("review.rerun");
+  const reviewClip = unavailableCall<ReviewClipResponse>("review.clip");
   const run = unavailableCall<PipelineRunResponse>("pipeline.run");
   const cancel = unavailableCall<PipelineCancelResponse>("pipeline.cancel");
   const subscribe = unavailableCall<RunsSubscribeResponse>("runs.subscribe");
@@ -312,6 +383,14 @@ function unavailableTransport(): RendererTransport {
   return {
     kind: "browser",
     sessions: { list, get, create, copy, reveal, qa, mapping },
+    review: {
+      list: reviewList,
+      resolve: reviewResolve,
+      bulk: reviewBulk,
+      revert: reviewRevert,
+      rerun: reviewRerun,
+      clip: reviewClip,
+    },
     pipeline: { run, cancel },
     runs: {
       subscribe,

@@ -50,6 +50,14 @@ describe("renderer transport", () => {
           error: { code: "unavailable", message: "not ready" },
         }),
       },
+      review: {
+        list: async () => ({ ok: false, error: { code: "unavailable", message: "not ready" } }),
+        resolve: async () => ({ ok: false, error: { code: "unavailable", message: "not ready" } }),
+        bulk: async () => ({ ok: false, error: { code: "unavailable", message: "not ready" } }),
+        revert: async () => ({ ok: false, error: { code: "unavailable", message: "not ready" } }),
+        rerun: async () => ({ ok: false, error: { code: "unavailable", message: "not ready" } }),
+        clip: async () => ({ ok: false, error: { code: "unavailable", message: "not ready" } }),
+      },
       pipeline: {
         run: async () => ({ ok: false, error: { code: "unavailable", message: "not ready" } }),
         cancel: async () => ({ ok: false, error: { code: "unavailable", message: "not ready" } }),

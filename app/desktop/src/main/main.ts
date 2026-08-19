@@ -1,6 +1,8 @@
 import { mkdirSync } from "node:fs";
+import { access, mkdir, readdir, readFile, realpath, rename, unlink } from "node:fs/promises";
+import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { app, BrowserWindow, session, shell } from "electron";
 import { registerIpcHandlers, sendOutboundEvent, type IpcHandlerMap } from "./ipc.js";
@@ -21,8 +23,32 @@ import { getUiRoot, getUserDataPaths, type DesktopUserDataPaths } from "./paths.
 import { DesktopSidecarSupervisor, type SidecarState } from "./sidecar/index.js";
 import { structuredError, type DesktopEvent, type RunEvent } from "../shared/contracts.js";
 import { createUiUrl, isAllowedUiUrl, registerUiProtocol, registerUiScheme } from "./uiProtocol.js";
-import { openDb, type Db } from "@dnd/core";
+import {
+  openDb,
+  readArtifact,
+  readFeatureEmbedding,
+  readProfiles,
+  resolveSession,
+  revertProfile,
+  updateProfile,
+  type Db,
+} from "@dnd/core";
+
+type ProfileUpdateResult = Awaited<ReturnType<typeof updateProfile>>;
+interface ReviewVoiceCluster {
+  readonly id: string;
+  readonly player_id: string;
+  readonly utterance_ids: string[];
+  readonly centroid: number[];
+  readonly airtime_s: number;
+  readonly table_score: number;
+}
 import { RunManager } from "./runs/index.js";
+import {
+  asIpcReviewHandlers,
+  createReviewHandlers,
+  type ReviewHandlers,
+} from "./handlers/review.js";
 
 const DEV_URL_ENV = ["DND_DEV_SERVER_URL", "VITE_DEV_SERVER_URL", "ELECTRON_RENDERER_URL"] as const;
 const UI_ORIGIN_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
@@ -37,6 +63,7 @@ let eventSequence = 0;
 let quitStopPromise: Promise<void> | null = null;
 let quitRequested = false;
 let sessionHandlers: SessionHandlers | null = null;
+let reviewHandlers: ReviewHandlers | null = null;
 let desktopPaths: DesktopUserDataPaths | null = null;
 let settingsHandlers: SettingsHandlers | null = null;
 let runtimeSettings: SettingsMap = {};
@@ -195,6 +222,200 @@ function campaignRootForDesktop(settings: SettingsMap = runtimeSettings): string
   );
 }
 
+function inside(root: string, candidate: string): boolean {
+  const relativePath = relative(resolve(root), resolve(candidate));
+  return relativePath === "" || (!relativePath.startsWith("..") && !isAbsolute(relativePath));
+}
+
+async function productionProfileAdapters(
+  sessionsRoot: string,
+  profileRoot: string,
+): Promise<{
+  readonly update: (
+    sessionId: string,
+    utteranceId: string,
+    characterId: string | null,
+  ) => Promise<string>;
+  readonly revert: (sessionId: string, journalId: string) => Promise<void>;
+  readonly find: (sessionId: string, utteranceId: string) => Promise<string | undefined>;
+}> {
+  const journal = new Map<
+    string,
+    { readonly playerId: string; readonly update: ProfileUpdateResult }
+  >();
+  const update = async (
+    sessionId: string,
+    utteranceId: string,
+    characterId: string | null,
+  ): Promise<string> => {
+    if (characterId === null) throw new Error("a profile is required for a character resolution");
+    const session = await resolveSession(sessionsRoot, sessionId);
+    if (session === null) throw new Error("session was not found");
+    const [transcript, features] = await Promise.all([
+      readArtifact(session, "transcript"),
+      readArtifact(session, "features"),
+    ]);
+    const utterance = transcript.utterances.find((item) => item.id === utteranceId);
+    const feature = features.rows.find((item) => item.utterance_id === utteranceId);
+    if (utterance === undefined || feature === undefined || feature.offset === null)
+      throw new Error("voice evidence is unavailable for this utterance");
+    const embedding = await readFeatureEmbedding(
+      join(session.paths.root, features.embedding.blob),
+      feature.offset,
+      features.embedding.dimension,
+    );
+    const playerId = feature.player_id ?? utterance.player_id;
+    if (playerId === null) throw new Error("utterance has no bound player");
+    const profiles = await readProfiles(profileRoot, playerId);
+    const profile = profiles.find((item) => item.profile_id === characterId);
+    if (profile === undefined) throw new Error("selected character profile was not found");
+    const cluster: ReviewVoiceCluster = {
+      id: `review-${utteranceId}`,
+      player_id: playerId,
+      utterance_ids: [utteranceId],
+      centroid: embedding,
+      airtime_s: Math.max(0, utterance.end_s - utterance.start_s),
+      table_score: 1,
+    };
+    const result = await updateProfile(profileRoot, playerId, profile, cluster, sessionId);
+    journal.set(result.journal_id, { playerId, update: result });
+    return result.journal_id;
+  };
+  const revert = async (sessionId: string, journalId: string): Promise<void> => {
+    let entry = journal.get(journalId);
+    if (entry === undefined) {
+      const players = await readdir(profileRoot, { withFileTypes: true }).catch(() => []);
+      for (const player of players) {
+        if (!player.isDirectory()) continue;
+        try {
+          const parsed: unknown = JSON.parse(
+            await readFile(
+              join(profileRoot, player.name, "journal", `${journalId}.committed.json`),
+              "utf8",
+            ),
+          );
+          if (
+            parsed !== null &&
+            typeof parsed === "object" &&
+            "state" in parsed &&
+            parsed.state === "committed" &&
+            "session_id" in parsed &&
+            parsed.session_id === sessionId
+          ) {
+            entry = { playerId: player.name, update: parsed as unknown as ProfileUpdateResult };
+            break;
+          }
+        } catch {
+          /* another player has no matching journal */
+        }
+      }
+    }
+    if (entry === undefined || entry.update.session_id !== sessionId)
+      throw new Error("profile journal entry was not found");
+    await revertProfile(profileRoot, entry.playerId, entry.update);
+    journal.delete(journalId);
+  };
+  const find = async (sessionId: string, utteranceId: string): Promise<string | undefined> => {
+    const players = await readdir(profileRoot, { withFileTypes: true }).catch(() => []);
+    for (const player of players) {
+      if (!player.isDirectory()) continue;
+      const files = await readdir(join(profileRoot, player.name, "journal")).catch(() => []);
+      for (const file of files.filter((name) => name.endsWith(".committed.json"))) {
+        try {
+          const parsed = JSON.parse(
+            await readFile(join(profileRoot, player.name, "journal", file), "utf8"),
+          ) as {
+            session_id?: string;
+            confirmed_utterance_ids?: readonly string[];
+            journal_id?: string;
+          };
+          if (
+            parsed.session_id === sessionId &&
+            parsed.confirmed_utterance_ids?.includes(utteranceId)
+          )
+            return parsed.journal_id;
+        } catch {
+          /* ignore unrelated or incomplete journal entries */
+        }
+      }
+    }
+    return undefined;
+  };
+  return { update, revert, find };
+}
+
+async function productionExtractClip(
+  sessionsRoot: string,
+  sessionId: string,
+  utteranceId: string,
+): Promise<string> {
+  const session = await resolveSession(sessionsRoot, sessionId);
+  if (session === null) throw new Error("session was not found");
+  const [manifest, transcript] = await Promise.all([
+    readArtifact(session, "manifest"),
+    readArtifact(session, "transcript"),
+  ]);
+  const utterance = transcript.utterances.find((item) => item.id === utteranceId);
+  const track =
+    utterance === undefined
+      ? undefined
+      : manifest.tracks.find((item) => item.track_id === utterance.track_id);
+  if (utterance === undefined || track === undefined) throw new Error("clip source was not found");
+  const source = resolve(session.paths.root, track.path);
+  if (!inside(session.paths.root, source)) throw new Error("clip source escaped session directory");
+  await access(source);
+  if (!inside(await realpath(session.paths.root), await realpath(source)))
+    throw new Error("clip source symlink escaped session directory");
+  const clips = session.paths.media("clips");
+  await mkdir(clips, { recursive: true });
+  const output = join(clips, `${utteranceId}.wav`);
+  const temp = `${output}.tmp-${randomUUID()}`;
+  const duration = Math.max(0.01, utterance.end_s - utterance.start_s);
+  try {
+    await new Promise<void>((resolvePromise, reject) => {
+      const child = spawn(
+        "ffmpeg",
+        [
+          "-hide_banner",
+          "-loglevel",
+          "error",
+          "-ss",
+          String(utterance.start_s),
+          "-t",
+          String(duration),
+          "-i",
+          source,
+          "-ac",
+          "1",
+          "-ar",
+          "16000",
+          "-y",
+          temp,
+        ],
+        { stdio: ["ignore", "pipe", "pipe"] },
+      );
+      const timer = setTimeout(() => {
+        child.kill("SIGKILL");
+        reject(new Error("ffmpeg clip extraction timed out"));
+      }, 30_000);
+      child.once("error", (error) => {
+        clearTimeout(timer);
+        reject(new Error(`ffmpeg is unavailable: ${error.message}`));
+      });
+      child.once("close", (code) => {
+        clearTimeout(timer);
+        if (code === 0) resolvePromise();
+        else reject(new Error(`ffmpeg clip extraction failed with exit code ${String(code)}`));
+      });
+    });
+  } catch (error) {
+    await unlink(temp).catch(() => undefined);
+    throw error;
+  }
+  await rename(temp, output);
+  return output;
+}
+
 function setupSessionHandlers(paths: DesktopUserDataPaths, settings: SettingsMap): void {
   const roots = runtimeRootsForSettings(settings, {
     sessionsRoot: paths.sessions,
@@ -219,6 +440,37 @@ function setupSessionHandlers(paths: DesktopUserDataPaths, settings: SettingsMap
       const failure = await shell.openPath(path);
       if (failure !== "") throw new Error(failure);
       return true;
+    },
+  });
+  const profileAdaptersPromise = productionProfileAdapters(
+    roots.sessionsRoot,
+    join(roots.campaignRoot, "profiles"),
+  );
+  reviewHandlers = createReviewHandlers({
+    sessionsRoot: roots.sessionsRoot,
+    campaignRoot: roots.campaignRoot,
+    extractClip: (sessionId, utteranceId) =>
+      productionExtractClip(roots.sessionsRoot, sessionId, utteranceId),
+    updateProfile: async (sessionId, utteranceId, characterId) =>
+      (await profileAdaptersPromise).update(sessionId, utteranceId, characterId),
+    revertProfile: async (sessionId, journalId) =>
+      (await profileAdaptersPromise).revert(sessionId, journalId),
+    findProfileJournal: async (sessionId, utteranceId) =>
+      (await profileAdaptersPromise).find(sessionId, utteranceId),
+    rerun: async (sessionId) => {
+      if (sidecar === null) throw new Error("sidecar is unavailable");
+      const pipeline = createSidecarHandlers(sidecar, {
+        sessionsRoot: roots.sessionsRoot,
+        campaignRoot: roots.campaignRoot,
+        ...(runManager === null ? {} : { manager: runManager }),
+      });
+      if (pipeline.pipelineRun === undefined) throw new Error("pipeline is unavailable");
+      return (
+        await pipeline.pipelineRun(
+          { sessionId, stages: ["persona"], force: true },
+          { event: { sender: { id: 0 } }, senderId: 0 },
+        )
+      ).runId;
     },
   });
 }
@@ -455,7 +707,8 @@ function sidecarHandlers(): IpcHandlerMap {
           campaignRoot: campaignRootForDesktop(),
           ...(runManager === null ? {} : { manager: runManager }),
         });
-  return { ...sessions, ...settings, ...pipeline };
+  const review = reviewHandlers === null ? {} : asIpcReviewHandlers(reviewHandlers);
+  return { ...sessions, ...settings, ...pipeline, ...review };
 }
 
 function installNetworkBlock(): void {
