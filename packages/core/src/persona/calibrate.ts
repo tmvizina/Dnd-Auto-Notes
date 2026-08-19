@@ -54,6 +54,9 @@ const REGULARIZATION = 0.01;
 const LEARNING_RATE = 0.05;
 const EPOCHS = 160;
 
+/** Fractions of the least-confident labels the threshold sweep reviews. */
+const SWEEP_FRACTIONS = [0.25, 0.5, 0.75] as const;
+
 export function sampleLabels<
   T extends { utterance_id: string; player_id?: string | null; mode?: string; score?: number },
 >(
@@ -205,7 +208,7 @@ function classes(labels: readonly LabelRecord[]): LabelMode[] {
 function predict(
   models: ReadonlyMap<LabelMode, Model>,
   label: LabelRecord,
-): { readonly mode: LabelMode; readonly confidence: number } {
+): { readonly mode: LabelMode; readonly confidence: number; readonly margin: number } {
   const scores = [...models.entries()].map(([mode, model]) => ({
     mode,
     score: probability(model, label),
@@ -213,7 +216,16 @@ function predict(
   scores.sort((a, b) => b.score - a.score || stable(a.mode, b.mode));
   const best = scores[0];
   if (best === undefined) throw new Error("no calibration classes available");
-  return { mode: best.mode, confidence: best.score };
+  // Margin, not the winning probability, is what the rest of the pipeline
+  // flags on (`match_min_margin` in the scorer, and the DM/NPC assignment).
+  // The winning probability of k one-vs-rest models never drops below 1/k, so
+  // sweeping it below that measures nothing.
+  const runnerUp = scores[1];
+  return {
+    mode: best.mode,
+    confidence: best.score,
+    margin: runnerUp === undefined ? 1 : best.score - runnerUp.score,
+  };
 }
 
 function foldsFor(labels: readonly LabelRecord[], count: number): LabelRecord[][] {
@@ -368,7 +380,7 @@ export function calibrate(
   const folds = foldsFor(labels, foldCount);
   const predictionById = new Map<
     string,
-    { readonly mode: LabelMode; readonly confidence: number }
+    { readonly mode: LabelMode; readonly confidence: number; readonly margin: number }
   >();
   for (const fold of folds) {
     const heldOut = new Set(fold.map((label) => label.utterance_id));
@@ -392,17 +404,32 @@ export function calibrate(
     ordered.map((label) => predictionById.get(label.utterance_id)?.mode ?? knownClasses[0]!),
     knownClasses,
   );
-  const threshold_sweep = [0.25, 0.5, 0.75].map((threshold) => {
-    const flagged = ordered.filter(
-      (label) => (predictionById.get(label.utterance_id)?.confidence ?? 0) < threshold,
-    );
-    const unflagged = ordered.filter((label) => !flagged.includes(label));
+  // The sweep answers "if I hand-review the least confident N %, what error
+  // rate is left in what I did not review?" — so it cuts by rank, not by a
+  // fixed value. A fixed ladder cannot do this: the margins a given campaign
+  // produces are unknown in advance, and a ladder that happens to sit below
+  // all of them reports a flat, empty sweep that looks like a clean bill of
+  // health. `threshold` is the margin at the cut, so it is still directly
+  // usable as `match_min_margin`.
+  const byMargin = [...ordered].sort(
+    (a, b) =>
+      (predictionById.get(a.utterance_id)?.margin ?? 1) -
+        (predictionById.get(b.utterance_id)?.margin ?? 1) || stable(a.utterance_id, b.utterance_id),
+  );
+  const threshold_sweep = SWEEP_FRACTIONS.map((fraction) => {
+    const take = Math.min(byMargin.length, Math.ceil(fraction * byMargin.length));
+    const flagged = new Set(byMargin.slice(0, take).map((label) => label.utterance_id));
+    const unflagged = ordered.filter((label) => !flagged.has(label.utterance_id));
     const errors = unflagged.filter(
       (label) => predictionById.get(label.utterance_id)?.mode !== label.mode,
     ).length;
+    const cut = byMargin[take - 1];
     return {
-      threshold,
-      flagged_fraction: flagged.length / Math.max(1, ordered.length),
+      threshold:
+        cut === undefined
+          ? 0
+          : Number((predictionById.get(cut.utterance_id)?.margin ?? 0).toFixed(6)),
+      flagged_fraction: flagged.size / Math.max(1, ordered.length),
       error_rate: unflagged.length === 0 ? 0 : errors / unflagged.length,
     };
   });
@@ -479,6 +506,10 @@ export async function appendCalibrationDoc(
     await appendFile(path, row, "utf8");
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    // ENOENT covers a missing *directory* as well as a missing file, and a
+    // fresh campaign has neither — so the recovery has to create the folder
+    // too, or the whole calibrate run exits 2 having done all the fitting.
+    await mkdir(join(path, ".."), { recursive: true });
     await writeFile(
       path,
       `# Calibration runs\n\n| date | session | labels | accuracy | profile before | profile after |\n| --- | --- | ---: | ---: | ---: | ---: |\n${row.slice(1)}`,

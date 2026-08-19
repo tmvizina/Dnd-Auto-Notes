@@ -117,12 +117,17 @@ describe("pipeline argument handling", () => {
 
       vi.useFakeTimers();
       const hung = playLabelClip({ path: clipPath, start_s: 0, end_s: 1 }, spawnProcess);
+      // The rejection handler has to be attached before the timers are driven.
+      // Asserting after the fact leaves a microtask gap in which the rejection
+      // is genuinely unhandled, which Node reports and Vitest counts as an
+      // error even though every assertion passes.
+      const hungRejects = expect(hung).rejects.toThrow("timed out");
       await vi.advanceTimersByTimeAsync(30_000);
       expect(child.kill).toHaveBeenCalledWith("SIGTERM");
       await vi.advanceTimersByTimeAsync(1_000);
       expect(child.kill).toHaveBeenCalledWith("SIGKILL");
       await vi.advanceTimersByTimeAsync(1_000);
-      await expect(hung).rejects.toThrow("timed out");
+      await hungRejects;
       expect(callbacks.size).toBe(0);
       vi.useRealTimers();
     } finally {
@@ -154,7 +159,9 @@ describe("pipeline argument handling", () => {
       const fixed = "2030-02-03T04:05:06.000Z";
       const outcome = await run(["calibrate", "--campaign", campaign], root, { now: () => fixed });
       expect(outcome.exitCode).toBe(0);
-      expect(outcome.stdout).toContain("2030-02-03T04-05-06.000Z");
+      // writeCalibration folds both `:` and `.` out of the stamp, because the
+      // stamp is also the `version` token stored inside the file.
+      expect(outcome.stdout).toContain("scorer-2030-02-03T04-05-06-000Z.json");
       expect(readFileSync(join(root, "docs", "calibration.md"), "utf8")).toContain(fixed);
       const allLabels = await readLabels(join(campaign, "labels", "all.jsonl"));
       const partitions = profilePartitions(allLabels);

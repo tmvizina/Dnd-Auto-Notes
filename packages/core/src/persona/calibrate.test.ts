@@ -70,7 +70,9 @@ describe("label calibration", () => {
     expect(
       sampleLabels(items, "sequential", 2, new Set(["u0"])).map((item) => item.utterance_id),
     ).toEqual(["u1", "u2"]);
-    expect(sampleLabels(items, "uncertain", 1).map((item) => item.utterance_id)).toEqual(["u5"]);
+    // u11 is the only item at 0.5, which is the maximum-entropy point and so
+    // the most valuable thing a human can spend a minute labelling.
+    expect(sampleLabels(items, "uncertain", 1).map((item) => item.utterance_id)).toEqual(["u11"]);
     const stratified = sampleLabels(items, "stratified", 6);
     expect(stratified).toHaveLength(6);
     expect(stratified.filter((item) => item.player_id === "a")).toHaveLength(5);
